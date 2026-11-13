@@ -610,25 +610,174 @@ input[type=checkbox]:focus-visible{outline:2px solid var(--acsoft);outline-offse
 
 .case-art{display:block;width:100%;height:150px;margin:0 auto 8px}
 
-/* ---------- Рекламный блок на главной ---------- */
-/* высоту блока задают соседние плитки: сам блок на высоту ряда не влияет */
-.ad-wrap{position:relative;min-width:0;min-height:0}
-.ad-card{position:absolute;inset:0;display:block;border-radius:14px;overflow:hidden;border:1px solid var(--bd);background:#0d0820;color:#fff;text-decoration:none;isolation:isolate;transition:border-color .2s,box-shadow .3s}
-.ad-card:hover,.ad-card:focus-visible{border-color:#8b6cf0;box-shadow:0 10px 30px rgba(110,70,220,.35)}
-.ad-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
-.ad-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,8,32,0) 0%,rgba(13,8,32,0) 28%,rgba(70,38,160,.8) 60%,rgba(13,8,32,.95) 100%);opacity:0;transform:translateX(45%);transition:opacity .45s ease,transform .65s cubic-bezier(.2,.8,.2,1)}
-.ad-text{position:absolute;top:0;right:0;bottom:0;width:54%;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:0 16px 0 10px;opacity:0;transform:translateX(22px);transition:opacity .4s ease .1s,transform .55s cubic-bezier(.2,.8,.2,1) .1s}
-.ad-text b{font-size:clamp(15px,1.6vw,19px);line-height:1.22;text-shadow:0 1px 8px rgba(0,0,0,.5)}
-.ad-text span{font-size:12.5px;color:#d9ccff}
-.ad-card:hover img,.ad-card:focus-visible img{transform:scale(1.07)}
-.ad-card:hover .ad-shade,.ad-card:focus-visible .ad-shade,
-.ad-card:hover .ad-text,.ad-card:focus-visible .ad-text{opacity:1;transform:none}
-@media (hover:none){
-  .ad-shade,.ad-text{opacity:1;transform:none}
+
+/* ---------- Рекламный блок Timora ---------- */
+.ad-wrap{
+  position:relative;
+  min-width:0;
+  min-height:0
 }
-.ad-label{position:absolute;left:9px;bottom:8px;z-index:2;padding:2px 8px;border-radius:999px;background:rgba(13,8,32,.62);color:#e6dcff;font-size:10.5px;letter-spacing:.05em;pointer-events:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-@media (max-width:925px){.ad-wrap{min-height:140px}}
-:root .ad-wrap button.ad-x{position:absolute;top:7px;right:7px;z-index:3;width:26px;height:26px;min-height:0;padding:0;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(13,8,32,.55);color:#fff;font-size:12px;line-height:1;display:grid;place-items:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-:root .ad-wrap button.ad-x:hover:not(:disabled){background:rgba(13,8,32,.85);border-color:#fff;color:#fff}
-@media (pointer:coarse){:root .ad-wrap button.ad-x{width:32px;height:32px;min-height:0}}
-@media (prefers-reduced-motion:reduce){.ad-card img,.ad-shade,.ad-text{transition:none}}
+
+.ad-card{
+  position:absolute;
+  inset:0;
+  display:block;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #e7e5ef;
+  background:#f5f4fa;
+  color:#17171c;
+  text-decoration:none;
+  isolation:isolate;
+  transition:border-color .2s,box-shadow .3s
+}
+
+.ad-card:hover,
+.ad-card:focus-visible{
+  border-color:#c9c3df;
+  box-shadow:0 10px 30px rgba(75,65,110,.13)
+}
+
+.ad-card img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transition:transform .7s cubic-bezier(.2,.8,.2,1)
+}
+
+/* Светлый градиент в стиле Timora */
+.ad-shade{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    90deg,
+    rgba(247,246,251,0) 0%,
+    rgba(247,246,251,0) 25%,
+    rgba(247,246,251,.88) 58%,
+    rgba(247,246,251,.98) 100%
+  );
+  opacity:0;
+  transform:translateX(45%);
+  transition:opacity .45s ease,transform .65s cubic-bezier(.2,.8,.2,1)
+}
+
+/* Текст */
+.ad-text{
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  width:54%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:7px;
+  padding:0 16px 0 10px;
+  opacity:0;
+  transform:translateX(22px);
+  transition:opacity .4s ease .1s,transform .55s cubic-bezier(.2,.8,.2,1) .1s
+}
+
+.ad-text b{
+  font-size:clamp(15px,1.6vw,19px);
+  line-height:1.22;
+  color:#17171c;
+  text-shadow:none
+}
+
+.ad-text span{
+  font-size:12.5px;
+  color:#77738a
+}
+
+.ad-card:hover img,
+.ad-card:focus-visible img{
+  transform:scale(1.05)
+}
+
+.ad-card:hover .ad-shade,
+.ad-card:focus-visible .ad-shade,
+.ad-card:hover .ad-text,
+.ad-card:focus-visible .ad-text{
+  opacity:1;
+  transform:none
+}
+
+@media (hover:none){
+  .ad-shade,
+  .ad-text{
+    opacity:1;
+    transform:none
+  }
+}
+
+/* Метка рекламы */
+.ad-label{
+  position:absolute;
+  left:9px;
+  bottom:8px;
+  z-index:2;
+  padding:3px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  color:#777582;
+  border:1px solid rgba(220,218,231,.7);
+  font-size:10.5px;
+  letter-spacing:.04em;
+  pointer-events:none;
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px)
+}
+
+@media (max-width:925px){
+  .ad-wrap{
+    min-height:140px
+  }
+}
+
+/* Кнопка закрытия */
+:root .ad-wrap button.ad-x{
+  position:absolute;
+  top:7px;
+  right:7px;
+  z-index:3;
+  width:26px;
+  height:26px;
+  min-height:0;
+  padding:0;
+  border:1px solid rgba(210,208,222,.8);
+  border-radius:50%;
+  background:rgba(255,255,255,.78);
+  color:#555361;
+  font-size:12px;
+  line-height:1;
+  display:grid;
+  place-items:center;
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  transition:background .2s,border-color .2s,color .2s
+}
+
+:root .ad-wrap button.ad-x:hover:not(:disabled){
+  background:#fff;
+  border-color:#bcb6d2;
+  color:#17171c
+}
+
+@media (pointer:coarse){
+  :root .ad-wrap button.ad-x{
+    width:32px;
+    height:32px;
+    min-height:0
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ad-card img,
+  .ad-shade,
+  .ad-text{
+    transition:none
+  }
+}
