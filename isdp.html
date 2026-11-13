@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ИСДП — идеально сбалансированное дерево поиска</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -37,13 +37,19 @@
     <p>ИСДП удобно строить, когда весь набор ключей известен заранее. Для динамических вставок используют АВЛ-дерево или B-дерево.</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="trees.html">← Все деревья</a>
     <a href="sdp.html">СДП — случайное дерево поиска →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/pocket.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -121,5 +127,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.isdp});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

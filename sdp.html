@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>СДП — случайное дерево поиска</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -37,13 +37,19 @@
     <p>В худшем случае (возрастающие или убывающие ключи) дерево вырождается, и поиск занимает <code>O(n)</code>. Именно поэтому применяют балансировку — АВЛ-деревья и B-деревья.</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="isdp.html">← ИСДП</a>
     <a href="sdp-delete.html">Удаление из СДП →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/pocket.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -163,5 +169,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.sdp});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

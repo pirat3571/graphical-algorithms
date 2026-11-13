@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Б-дерево порядка m по шагам</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -62,13 +62,19 @@
     </ul>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="btree.html">← Двоичное Б-дерево</a>
     <a href="optimal-exact.html">Оптимальное дерево — точный алгоритм →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/pocket.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -210,5 +216,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.btreem});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

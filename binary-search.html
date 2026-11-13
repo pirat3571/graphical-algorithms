@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Бинарный поиск символа — два типа</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -69,14 +69,20 @@ return lo;</pre>
     <p>После каждого сравнения остаётся не более половины текущего диапазона. Количество шагов не превышает <code>⌈log₂(n + 1)⌉</code>, поэтому для 1000 элементов достаточно около 10 сравнений. Массив должен быть отсортирован — иначе отсечение половины не работает.</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="sort.html">← Сортировки</a>
     <a href="indexing.html">Индексация →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/algo.js"></script>
-<script src="assets/pocket.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/algo.js?v=4"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -200,5 +206,7 @@ return lo;</pre>
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.binary});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

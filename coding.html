@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Кодирование — Шеннон, Фано, Хаффман, Гилберт-Мур</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -88,13 +88,19 @@
     <p>Запасной разряд гарантирует, что двоичный интервал кодового слова целиком лежит внутри интервала символа, — код всегда префиксный. Средняя длина у Гилберта—Мура заметно больше, чем у Хаффмана, зато код назначается по алфавиту без перестроения (в варианте Шеннона—Фано—Элиаса с одним запасным разрядом <code>L ≤ H + 2</code>).</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="trees.html">← Деревья</a>
     <span></span>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/algo.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/algo.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -615,5 +621,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.coding});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -54,12 +54,18 @@
     </div>
   </div>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="avl.html">← Построение АВЛ-дерева</a>
     <a href="btree.html">Двоичное Б-дерево поиска →</a>
   </nav>
 </main>
 <script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
 <script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
@@ -337,5 +343,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.avldel});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

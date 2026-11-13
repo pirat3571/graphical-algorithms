@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Оптимальное дерево поиска — точный алгоритм</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -52,12 +52,18 @@
     <p><b>Построение дерева по матрице r.</b> Корень всего дерева — вершина с номером k = r<sub>0,n</sub>. Её левое поддерево описывает r<sub>0,k−1</sub>, правое — r<sub>k,n</sub>, и так далее для каждого отрезка (i, j), пока i &lt; j. Если i = j, поддерево пустое. Сложность вычисления матриц — O(n³).</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="btree-m.html">← Б-дерево порядка m</a>
     <a href="optimal-approx.html">Приближённые алгоритмы →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
 <script>
 (function(){
   'use strict';
@@ -258,5 +264,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.optexact});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

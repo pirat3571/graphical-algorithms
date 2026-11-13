@@ -103,6 +103,16 @@
         <p>Коды Шеннона, Фано, Хаффмана и Гилберта-Мура: вероятности по частотам, неравенство Крафта, средняя длина и энтропия.</p>
       </div>
     </a>
+    <div class="ad-wrap" id="adBox">
+      <a class="ad-card" href="https://timoraspace.dev/" target="_blank" rel="sponsored noopener noreferrer" aria-label="Реклама: Timora AI, все нейросети в одной подписке">
+        <img src="assets/ad-timora.jpg" alt="Timora AI: DeepSeek Harness и Claude Code" loading="lazy">
+        <span class="ad-shade"></span>
+        <span class="ad-text"><b>Все нейросети в одной подписке</b><span>Перейти →</span></span>
+      </a>
+      <button class="ad-x" type="button" aria-label="Закрыть рекламу" title="Закрыть">✕</button>
+      <div class="ad-label">Реклама</div>
+    </div>
+
   </nav>
 
   <div class="card" style="margin-top:18px">
@@ -116,6 +126,18 @@
 
   <footer class="note">Все вычисления выполняются локально в браузере.</footer>
 </main>
-<script src="assets/core.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/stats.js?v=1"></script>
+<script>
+(function(){
+  var box = document.getElementById('adBox');
+  if(!box) return;
+  try{ if(sessionStorage.getItem('adClosed') === '1'){ box.remove(); return; } }catch(e){}
+  box.querySelector('.ad-x').addEventListener('click', function(){
+    box.remove();
+    try{ sessionStorage.setItem('adClosed', '1'); }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>

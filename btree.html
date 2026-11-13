@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Двоичное Б-дерево поиска (ДБД) по шагам</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -41,13 +41,19 @@
     </ul>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="avl-delete.html">← Удаление из АВЛ</a>
     <a href="btree-m.html">Б-дерево порядка m →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/pocket.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -78,8 +84,8 @@
       if(d > depth) depth = d;
       walk(n.r, n.b ? d : d + 1);   /* горизонтальная связь — тот же уровень */
     })(t, 0);
-    const innerW = (x - 1) * GAP, W = Math.max(innerW + 70, 300), H = depth * LVL + 78, ox = (W - innerW) / 2;
-    const X = n => ox + pos[n.id].x * GAP, Y = n => 28 + pos[n.id].d * LVL;
+    const innerW = (x - 1) * GAP, W = Math.max(innerW + 70, 300), H = depth * LVL + 92, ox = (W - innerW) / 2;
+    const X = n => ox + pos[n.id].x * GAP, Y = n => 42 + pos[n.id].d * LVL;
     const path = new Set(snap.path || []), tags = snap.tags || {};
     let e = '', v = '';
     function arrow(a, b, hor){
@@ -102,7 +108,7 @@
       v += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
       v += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="16" font-weight="600" fill="${isNew ? '#fff' : 'var(--tx)'}">${esc(n.d)}</text>`;
       v += `<text x="${cx}" y="${cy + 35}" text-anchor="middle" font-size="11.5" fill="var(--mut)">bal ${n.b}</text>`;
-      if(tags[n.id]) v += `<text x="${cx - 25}" y="${cy - 13}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ac)">${esc(tags[n.id])}</text>`;
+      if(tags[n.id]) v += `<text x="${cx}" y="${cy - R - 7}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ac)" stroke="var(--card)" stroke-width="4" stroke-linejoin="round" paint-order="stroke">${esc(tags[n.id])}</text>`;
     })(t);
     const mark = (id, col) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="${col}"/></marker>`;
     el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><defs>${mark('ah', 'var(--tx)')}</defs>${e}${v}</svg>`;
@@ -207,5 +213,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.dbd});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>

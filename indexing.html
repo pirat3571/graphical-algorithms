@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Индексация символов — индексный массив с флагами</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=4">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -57,13 +57,19 @@
     <p>Сортировка всегда устойчивая: одинаковые символы сохраняют исходный порядок позиций. При убывании направление сравнения просто меняется на противоположное.</p>
   </details>
 
+  <details>
+    <summary>Проверь себя: вопросы по теме</summary>
+    <div id="quiz"></div>
+  </details>
+
   <nav class="pager">
     <a href="binary-search.html">← Бинарный поиск</a>
     <a href="hashing.html">Хеширование →</a>
   </nav>
 </main>
-<script src="assets/core.js"></script>
-<script src="assets/algo.js"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/quiz.js?v=5"></script>
+<script src="assets/algo.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -219,6 +225,7 @@
   build();
 })();
 </script>
+<script>TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.PAGE_QUIZ.indexing});</script>
+<script src="assets/stats.js"></script>
 </body>
 </html>
-
