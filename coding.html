@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Кодирование — Шеннон, Фано, Хаффман, Гилберт-Мур</title>
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -65,6 +65,13 @@
   </details>
 
   <details>
+    <summary>Побуквенное кодирование: разделимые и префиксные коды</summary>
+    <p>Побуквенный код ставит каждому символу алфавита своё кодовое слово, а код сообщения собирается из слов его символов. Код называется <b>разделимым</b>, если любое закодированное сообщение декодируется однозначно, и <b>префиксным</b>, если ни одно слово не является началом другого. Всякий префиксный код разделим, обратное неверно.</p>
+    <p><b>Декодирование по дереву.</b> Читаем биты и идём от корня: 0 влево, 1 вправо. Дошли до листа, значит выдаём его символ и возвращаемся в корень. Для префиксного кода слова лежат только в листьях, поэтому разделители не нужны.</p>
+    <p><b>Избыточность</b> кода r = L<sub>ср</sub> − H показывает, насколько средняя длина слова больше энтропии. Оптимальный код имеет наименьшую избыточность.</p>
+  </details>
+
+  <details>
     <summary>Код Шеннона</summary>
     <p>Символы упорядочиваются по убыванию вероятности. Длина кодового слова <code>l<sub>i</sub> = ⌈−log₂p<sub>i</sub>⌉</code> — так каждому символу отводится «его» количество бит. Кодовое слово — первые l<sub>i</sub> бит двоичной записи накопленной вероятности <code>Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i−1</sub></code>.</p>
     <p>Гарантия: <code>L &lt; H + 1</code> — не более чем на бит хуже предела, при этом длины вычисляются напрямую, без построения дерева.</p>
@@ -84,8 +91,8 @@
 
   <details>
     <summary>Код Гилберта-Мура</summary>
-    <p>Символы остаются в исходном (алфавитном) порядке — сортировать их не нужно. Для каждого символа берётся середина его интервала: <code>Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i−1</sub> + p<sub>i</sub>/2</code>. Длина слова <code>l<sub>i</sub> = ⌈−log₂p<sub>i</sub>⌉ + 2</code>, а само слово — первые l<sub>i</sub> бит двоичной записи Q<sub>i</sub>.</p>
-    <p>Запасной разряд гарантирует, что двоичный интервал кодового слова целиком лежит внутри интервала символа, — код всегда префиксный. Средняя длина у Гилберта—Мура заметно больше, чем у Хаффмана, зато код назначается по алфавиту без перестроения (в варианте Шеннона—Фано—Элиаса с одним запасным разрядом <code>L ≤ H + 2</code>).</p>
+    <p>Символы стоят в алфавитном порядке: a<sub>1</sub> ≤ a<sub>2</sub> ≤ … ≤ a<sub>n</sub>. Код алфавитный: кодовые слова идут в том же порядке, что и символы. Для каждого символа берётся середина его интервала: <code>Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i−1</sub> + p<sub>i</sub>/2</code>. Длина слова <code>L<sub>i</sub> = ⌈−log₂p<sub>i</sub>⌉ + 1</code>, а само слово — первые L<sub>i</sub> бит двоичной записи Q<sub>i</sub>.</p>
+    <p>Лишний разряд гарантирует, что двоичный интервал слова целиком лежит внутри интервала символа, поэтому код всегда префиксный. Средняя длина больше, чем у кода Хаффмана: <code>L &lt; H + 2</code>. Зато код назначается по алфавиту, без сортировки по вероятности.</p>
   </details>
 
   <details>
@@ -99,7 +106,8 @@
   </nav>
 </main>
 <script src="assets/core.js?v=4"></script>
-<script src="assets/quiz.js?v=5"></script>
+<script src="assets/stats.js?v=1"></script>
+<script src="assets/quiz.js?v=6"></script>
 <script src="assets/algo.js?v=4"></script>
 <script>
 (function(){
@@ -114,8 +122,8 @@
   const INFO = {
     shannon:{
       name:'Код Шеннона',
-      idea:'Символы упорядочиваются по убыванию вероятности. Длина слова l<sub>i</sub> = ⌈-log₂p<sub>i</sub>⌉, а само слово — первые l<sub>i</sub> бит двоичной дроби накопленной вероятности Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i-1</sub>.',
-      len:'l<sub>i</sub> = ⌈-log₂p<sub>i</sub>⌉',
+      idea:'Символы упорядочиваются по убыванию вероятности. Длина слова L<sub>i</sub> подбирается из неравенства 1/2<sup>L<sub>i</sub></sup> ≤ p<sub>i</sub> &lt; 1/2<sup>L<sub>i</sub>−1</sup>, а само слово — первые L<sub>i</sub> бит двоичной записи накопленной вероятности Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i-1</sub>.',
+      len:'1/2<sup>L</sup> ≤ p &lt; 1/2<sup>L−1</sup>',
       order:'по убыванию p<sub>i</sub>',
       bound:'L &lt; H + 1',
       feat:'длины считаются напрямую, без дерева'
@@ -125,24 +133,24 @@
       idea:'Отсортированный список рекурсивно делится на две части с максимально близкими суммами вероятностей: верхней приписывается бит 0, нижней — бит 1. Деление повторяется, пока в группе не останется один символ.',
       len:'из разбиений групп',
       order:'по убыванию p<sub>i</sub>',
-      bound:'L ≥ H, обычно около H',
+      bound:'почти оптимальный: L ≥ H, обычно L &lt; H + 1',
       feat:'группы почти равного веса'
     },
     huffman:{
       name:'Код Хаффмана',
-      idea:'Два узла с наименьшими вероятностями многократно сливаются в один. Код символа читается по пути от корня полученного дерева: левое ребро — 0, правое — 1.',
+      idea:'Две наименьшие вероятности многократно складываются, сумма встаёт в упорядоченный список на своё место. Когда остаётся два элемента, верхнему даётся 0, нижнему 1, и коды достраиваются обратно. Код символа — путь от корня дерева к его листу.',
       len:'глубина листа в дереве',
-      order:'очередь по возрастанию p<sub>i</sub>',
+      order:'по убыванию p<sub>i</sub>',
       bound:'L ≤ L(Шеннона), L ≤ L(Фано)',
       feat:'оптимальный префиксный код'
     },
     gm:{
       name:'Код Гилберта—Мура',
-      idea:'Символы остаются в исходном порядке. Берётся середина интервала символа Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i-1</sub> + p<sub>i</sub>/2, длина l<sub>i</sub> = ⌈-log₂p<sub>i</sub>⌉ + 2, код — первые l<sub>i</sub> бит двоичной записи Q<sub>i</sub>.',
-      len:'l<sub>i</sub> = ⌈-log₂p<sub>i</sub>⌉ + 2',
-      order:'исходный (алфавитный)',
-      bound:'L &gt; H, код всегда префиксный',
-      feat:'без сортировки, по алфавиту'
+      idea:'Символы стоят в алфавитном порядке. Берётся середина интервала символа Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i-1</sub> + p<sub>i</sub>/2, длина L<sub>i</sub> = ⌈−log₂p<sub>i</sub>⌉ + 1, код — первые L<sub>i</sub> бит двоичной записи Q<sub>i</sub>.',
+      len:'L<sub>i</sub> = ⌈−log₂p<sub>i</sub>⌉ + 1',
+      order:'по алфавиту символов',
+      bound:'L &lt; H + 2, код алфавитный',
+      feat:'слова идут в порядке символов'
     }
   };
 
@@ -159,31 +167,31 @@
   const f2 = x => x.toFixed(2);
   const f3 = x => x.toFixed(3);
   const f4 = x => x.toFixed(4);
+  const fq = x => String(+x.toFixed(4));
+  const pw = e => e <= 0 ? String(Math.pow(2, -e)) : e === 1 ? '1/2' : `1/2<sup>${e}</sup>`;
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
 
-  function binFrac(q, n){
-    let s = '', x = q - Math.floor(q);
+  /* двоичная запись дроби num/den точными целыми, n знаков */
+  function binFracInt(num, den, n){
+    let s = '', x = num;
     for(let i = 0; i < n; i++){
       x *= 2;
-      s += x >= 1 ? '1' : '0';
-      x -= Math.floor(x);
+      if(x >= den){ s += '1'; x -= den; } else s += '0';
     }
     return s;
   }
-
   function bitsHTML(bits, l){
     if(!l) return '—';
     return `<span class="mono">0.<span class="hlbits">${esc(bits.slice(0, l))}</span><span class="dimbits">${esc(bits.slice(l))}</span></span>`;
   }
-
   function probsHTML(list, o){
     o = o || {};
-    const hot = o.hot, done = new Set(o.done || []);
     return '<div class="probs">' + list.map((e, k) =>
-      `<span class="prob${o.hot === k ? ' hot' : ''}${done.has(k) ? ' done' : ''}"><b>${esc(e.ch)}</b><i>×${e.n} · ${f2(e.p)}</i></span>`
+      `<span class="prob${o.hot === k ? ' hot' : ''}"><b>${esc(e.ch)}</b><i>×${e.n} · ${f2(e.p)}</i></span>`
     ).join('') + '</div>';
   }
 
-  /* ---------- расчёт кодов (чистые функции) ---------- */
+  /* ---------- расчёт кодов ---------- */
   function finish(list){
     const L = list.reduce((s, e) => s + e.p * e.l, 0);
     const kraft = list.reduce((s, e) => s + Math.pow(2, -e.l), 0);
@@ -194,23 +202,22 @@
     let acc = 0;
     const list = sorted.map(e => {
       const l = Math.max(0, Math.ceil(e.log - 1e-9));
-      const Q = acc;
-      const bits = binFrac(Q, Math.max(12, l + 2));
-      const o = {ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l, Q, bits, code:l ? bits.slice(0, l) : ''};
-      acc += e.p;
+      const bits = binFracInt(acc, 100, Math.max(12, l + 2));
+      const o = {ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l, Q:acc / 100, bits, code:l ? bits.slice(0, l) : ''};
+      acc += e.ph;
       return o;
     });
     return finish(list);
   }
 
-  function calcGM(entries){
+  function calcGM(alpha){
     let acc = 0;
-    const list = entries.map(e => {
-      const l = Math.max(0, Math.ceil(e.log - 1e-9)) + 2;
-      const Q = acc + e.p / 2;
-      const bits = binFrac(Q, Math.max(12, l + 2));
-      const o = {ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l, Q, bits, code:bits.slice(0, l)};
-      acc += e.p;
+    const list = alpha.map(e => {
+      const l = Math.max(0, Math.ceil(e.log - 1e-9)) + 1;
+      const num = 2 * acc + e.ph;
+      const bits = binFracInt(num, 200, Math.max(12, l + 2));
+      const o = {ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l, Q:num / 200, bits, code:bits.slice(0, l)};
+      acc += e.ph;
       return o;
     });
     return finish(list);
@@ -221,11 +228,7 @@
     const splits = [];
     (function rec(lo, hi, prefix){
       if(lo > hi) return;
-      if(lo === hi){
-        arr[lo].code = prefix;
-        arr[lo].l = prefix.length;
-        return;
-      }
+      if(lo === hi){ arr[lo].code = prefix; arr[lo].l = prefix.length; return; }
       let total = 0;
       for(let k = lo; k <= hi; k++) total += arr[k].p;
       let acc = 0, best = lo, bestDiff = Infinity;
@@ -243,66 +246,112 @@
     return Object.assign(finish(arr), {splits});
   }
 
-  function calcHuffman(sorted, entries){
+  /* список по убыванию; две последние вероятности складываются, сумма встаёт ниже равных */
+  function calcHuffman(sorted){
     let id = 0;
-    const queue = entries.map(e => ({id:++id, ch:e.ch, p:e.p}))
-      .sort((a, b) => a.p - b.p || a.id - b.id);
-    const merges = [];
-    while(queue.length > 1){
-      const before = queue.map((x, ix) => ({p:x.p, ch:x.ch, sel:ix < 2}));
-      const a = queue.shift(), b = queue.shift();
-      const m = {id:++id, ch:null, p:+(a.p + b.p).toFixed(6), l:null, r:null};
-      m.l = a; m.r = b;
-      let at = queue.findIndex(x => x.p > m.p + 1e-12);
-      if(at < 0) at = queue.length;
-      queue.splice(at, 0, m);
-      const after = queue.map(x => ({p:x.p, ch:x.ch, nw:x === m}));
-      merges.push({a:{ch:a.ch, p:a.p}, b:{ch:b.ch, p:b.p}, mp:m.p, before, after});
+    const byId = {};
+    let list = sorted.map(e => { const nd = {id:++id, ch:e.ch, p:e.p, ph:e.ph, l:null, r:null}; byId[nd.id] = nd; return nd; });
+    const stages = [list.map(x => x.id)], merges = [];
+    while(list.length > 2){
+      const a = list[list.length - 2], b = list[list.length - 1];
+      const ph = a.ph + b.ph;
+      const m = {id:++id, ch:null, p:ph / 100, ph, l:a, r:b};
+      byId[m.id] = m;
+      const rest = list.slice(0, -2);
+      let at = rest.length;
+      while(at > 0 && rest[at - 1].ph < ph) at--;
+      rest.splice(at, 0, m);
+      merges.push({a:a.id, b:b.id, m:m.id});
+      list = rest;
+      stages.push(list.map(x => x.id));
     }
-    const root = queue[0];
+    let root;
+    if(list.length === 1) root = list[0];
+    else{
+      const ph = list[0].ph + list[1].ph;
+      root = {id:++id, ch:null, p:ph / 100, ph, l:list[0], r:list[1]};
+      byId[root.id] = root;
+    }
     const codes = {};
     (function walk(n, code){
-      if(!n) return;
-      if(!n.l && !n.r){ codes[n.ch] = code || ''; return; }
+      n.code = code;
+      if(!n.l && !n.r){ codes[n.ch] = code; return; }
       walk(n.l, code + '0');
       walk(n.r, code + '1');
     })(root, '');
-    const list = sorted.map(e => ({ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l:(codes[e.ch] || '').length, code:codes[e.ch] || ''}));
-    return Object.assign(finish(list), {root, codes, merges});
+    const out = sorted.map(e => ({ch:e.ch, n:e.n, p:e.p, occ:e.occ, log:e.log, l:(codes[e.ch] || '').length, code:codes[e.ch] || ''}));
+    return Object.assign(finish(out), {root, codes, merges, stages, byId});
+  }
+
+  /* дерево из кодовых слов: ребро подписано префиксом */
+  function trie(list){
+    let id = 0;
+    const root = {id:++id, l:null, r:null, code:''};
+    list.forEach(e => {
+      let n = root;
+      for(const b of e.code){
+        const k = b === '0' ? 'l' : 'r';
+        if(!n[k]) n[k] = {id:++id, l:null, r:null, code:n.code + b};
+        n = n[k];
+      }
+      n.ch = e.ch; n.p = e.p;
+    });
+    return root;
   }
 
   /* ---------- отрисовка ---------- */
-  function tableHTML(list, upTo, partial, mode){
-    const qcol = mode !== 'code';
-    let h = '<div class="ctable-wrap"><table class="ctable"><thead><tr><th>i</th><th>символ</th><th>n<sub>i</sub></th><th>p<sub>i</sub></th><th>−log₂p<sub>i</sub></th><th>l<sub>i</sub></th>'
-      + (qcol ? '<th>Q<sub>i</sub></th><th>двоичная запись Q<sub>i</sub></th>' : '')
-      + '<th>кодовое слово</th></tr></thead><tbody>';
+  function fanoTable(list){
+    const ml = Math.max.apply(null, list.map(e => e.l));
+    let h = `<div class="ctable-wrap"><table class="ctable"><thead><tr><th>a<sub>i</sub></th><th>P<sub>i</sub></th><th colspan="${ml}">кодовое слово</th><th>L<sub>i</sub></th></tr></thead><tbody>`;
     list.forEach((e, k) => {
-      const done = k < upTo;
-      const part = k === upTo && partial;
-      const cur = part ? ' class="cur"' : '';
-      const wt = done || part ? '' : ' class="wt"';
-      h += `<tr${part ? ' class="cur"' : ''}><td>${k + 1}</td><td class="sym">${esc(e.ch)}${e.occ || ''}</td><td>${e.n}</td><td>${f2(e.p)}</td>`
-        + `<td${wt}>${done || part ? f3(e.log) : '·'}</td><td${wt}>${done || part ? e.l : '·'}</td>`;
-      if(qcol){
-        h += `<td${wt}>${done ? (mode === 'gm' ? f3(e.Q) : f2(e.Q)) : '·'}</td><td>${done ? bitsHTML(e.bits, e.l) : '·'}</td>`;
+      const nx = list[k + 1];
+      h += `<tr><td class="sym">${esc(e.ch)}${e.occ || ''}</td><td>${f2(e.p)}</td>`;
+      for(let j = 0; j < ml; j++){
+        const split = nx && e.l > j && nx.l > j && e.code.slice(0, j) === nx.code.slice(0, j) && e.code[j] === '0' && nx.code[j] === '1';
+        h += `<td${split ? ' style="border-bottom:2px solid var(--tx)"' : ''}>${j < e.l ? `<span class="cw">${e.code[j]}</span>` : ''}</td>`;
       }
-      h += `<td${wt}>${done ? `<span class="cw">${e.code ? esc(e.code) : '—'}</span>` : '·'}</td></tr>`;
+      h += `<td>${e.l}</td></tr>`;
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  /* mode: sh, gm — таблицы с P (неравенство) и Q; code — a, p, L, слово; fano — слово по разрядам */
+  function tableHTML(list, upTo, partial, mode){
+    if(mode === 'fano') return fanoTable(list);
+    const withQ = mode === 'sh' || mode === 'gm';
+    const ineq = e => mode === 'gm'
+      ? `${pw(e.l - 1)} ≤ <b>${f2(e.p)}</b> &lt; ${pw(e.l - 2)}`
+      : `${pw(e.l)} ≤ <b>${f2(e.p)}</b> &lt; ${pw(e.l - 1)}`;
+    let h = '<div class="ctable-wrap"><table class="ctable"><thead><tr><th>a<sub>i</sub></th><th>' + (withQ ? 'P' : 'p') + '<sub>i</sub></th>'
+      + (withQ ? '<th>Q<sub>i</sub></th>' : '') + '<th>L<sub>i</sub></th><th>кодовое слово</th></tr></thead><tbody>';
+    list.forEach((e, k) => {
+      const done = !withQ || k < upTo, part = withQ && k === upTo && partial, show = done || part;
+      h += `<tr${part ? ' class="cur"' : ''}><td class="sym">${esc(e.ch)}${e.occ || ''}</td>`
+        + `<td>${withQ ? (show ? ineq(e) : '·') : f2(e.p)}</td>`
+        + (withQ ? `<td${done ? '' : ' class="wt"'}>${done ? fq(e.Q) : '·'}</td>` : '')
+        + `<td${show ? '' : ' class="wt"'}>${show ? e.l : '·'}</td>`
+        + `<td${done ? '' : ' class="wt"'}>${done ? `<span class="cw">${e.code ? esc(e.code) : '—'}</span>` : '·'}</td></tr>`;
     });
     return h + '</tbody></table></div>';
   }
 
   function kraftHTML(list){
-    const terms = list.map(e => `<span class="kterm">2<sup>−${e.l}</sup> = ${f4(Math.pow(2, -e.l))}</span>`);
-    const sum = list.reduce((s, e) => s + Math.pow(2, -e.l), 0);
-    const ok = sum <= 1 + 1e-9;
-    return `<div class="kline">${terms.join('<span class="op">+</span>')}<span class="op">=</span><b class="ksum ${ok ? 'kok' : 'kbad'}">${f4(sum)}</b><span class="${ok ? 'kok' : 'kbad'}">${ok ? '≤ 1 — неравенство Крафта выполняется ✓' : '&gt; 1 — неравенство нарушено ✗'}</span></div>`;
+    const terms = list.map(e => `<span class="kterm">${pw(e.l)}</span>`);
+    const Lm = Math.max.apply(null, list.map(e => e.l));
+    let num = list.reduce((s, e) => s + Math.pow(2, Lm - e.l), 0), den = Math.pow(2, Lm);
+    const g = gcd(num, den);
+    const frac = den / g > 1 ? `${num / g}/${den / g}` : String(num / g);
+    const sum = num / den, ok = sum <= 1 + 1e-9;
+    return `<div class="kline">${terms.join('<span class="op">+</span>')}<span class="op">=</span><b class="ksum ${ok ? 'kok' : 'kbad'}">${frac}${den / g > 1 ? ' = ' + f4(sum) : ''}</b><span class="${ok ? 'kok' : 'kbad'}">${ok ? (sum === 1 ? '= 1' : '&lt; 1') + ': неравенство Крафта выполняется ✓' : '&gt; 1: неравенство нарушено ✗'}</span></div>`;
   }
-
   function lenHTML(list){
-    const terms = list.map(e => `<span class="kterm">${f2(e.p)}·${e.l}</span>`);
+    const terms = list.map(e => `<span class="kterm">${e.l}·${f2(e.p)}</span>`);
     const L = list.reduce((s, e) => s + e.p * e.l, 0);
-    return `<div class="kline">${terms.join('<span class="op">+</span>')}<span class="op">=</span><b class="ksum">${f3(L)}</b><span>бит на символ</span></div>`;
+    return `<div class="kline"><span>L<sub>ср</sub> =</span>${terms.join('<span class="op">+</span>')}<span class="op">=</span><b class="ksum">${f2(L)}</b></div>`;
+  }
+  function entHTML(list){
+    const terms = list.map(e => `<span class="kterm">${f2(e.p)}·log₂${f2(e.p)}</span>`);
+    return `<div class="kline"><span>H = −(</span>${terms.join('<span class="op">+</span>')}<span>) =</span><b class="ksum">${f2(ALL.H)}</b></div>`;
   }
 
   function cmpHTML(){
@@ -325,76 +374,82 @@
       if(sp && k === sp.best + 1) h += '<span class="fsplit">¦</span>';
       let cls = 'fcell';
       if(sp){
-        if(k >= sp.lo && k <= sp.hi){
-          cls += ' in';
-          if(k <= sp.best) cls += ' g0'; else cls += ' g1';
-          if(o.bits) cls += ' upd';
-        }
-      } else {
-        cls += ' in';
-        if(o.fin) cls += ' fin';
-      }
-      const p = prefixMap[e.ch] || '';
-      h += `<span class="${cls}"><b>${esc(e.ch)}</b><i>${f2(e.p)}</i><em>${esc(p)}</em></span>`;
+        if(k >= sp.lo && k <= sp.hi){ cls += ' in'; cls += k <= sp.best ? ' g0' : ' g1'; if(o.bits) cls += ' upd'; }
+      } else { cls += ' in'; if(o.fin) cls += ' fin'; }
+      h += `<span class="${cls}"><b>${esc(e.ch)}</b><i>${f2(e.p)}</i><em>${esc(prefixMap[e.ch] || '')}</em></span>`;
     });
     return h + '</div>';
   }
 
-  function queueHTML(items){
-    let h = '<div class="hqueue">';
-    items.forEach(it => {
-      h += `<span class="hchip${it.sel ? ' sel' : ''}${it.nw ? ' new' : ''}"><b>${it.ch ? esc(it.ch) : '•'}</b><i>${it.ch ? 'p=' + f2(it.p) : 'узел ' + f2(it.p)}</i></span>`;
-    });
-    return h + '</div>';
-  }
-
-  function treeHTML(){
-    const root = ALL.huffman.root, codes = ALL.huffman.codes;
-    if(!root) return '';
-    const gap = 46, lvl = 62, R = 17;
+  /* дерево: ребро подписано префиксом кода, лист — символом */
+  function treeHTML(root, o){
+    o = o || {};
+    const gap = 50, lvl = 66, R = 16;
     const L = S.layoutBinary(root, gap, lvl);
-    const W = Math.max((L.count - 1) * gap + 80, 300);
-    const H = L.depth * lvl + 70;
+    const W = Math.max((L.count - 1) * gap + 90, 300);
+    const H = L.depth * lvl + 78;
     const ox = (W - (L.count - 1) * gap) / 2;
     const X = id => ox + L.pos[id].x * gap;
-    const Y = id => 26 + L.pos[id].d * lvl;
+    const Y = id => 30 + L.pos[id].d * lvl;
     let edges = '', nodes = '';
     (function walk(n){
-      if(!n) return;
       [n.l, n.r].forEach((c, i) => {
         if(!c) return;
-        edges += `<line x1="${X(n.id)}" y1="${Y(n.id)}" x2="${X(c.id)}" y2="${Y(c.id)}" stroke="var(--mut)" stroke-width="1.4" opacity=".7"/>`;
-        nodes += `<text x="${(X(n.id) + X(c.id)) / 2 + (i === 0 ? -9 : 9)}" y="${(Y(n.id) + Y(c.id)) / 2 + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ac)">${i}</text>`;
+        edges += `<line x1="${X(n.id)}" y1="${Y(n.id)}" x2="${X(c.id)}" y2="${Y(c.id)}" stroke="var(--mut)" stroke-width="1.4" opacity=".8"/>`;
+        const mx = (X(n.id) + X(c.id)) / 2, my = (Y(n.id) + Y(c.id)) / 2;
+        nodes += `<text x="${mx + (i ? 6 : -6)}" y="${my + 4}" text-anchor="${i ? 'start' : 'end'}" font-size="11.5" font-weight="700" fill="var(--ac)" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${esc(c.code)}</text>`;
         walk(c);
       });
     })(root);
     (function walk(n){
-      if(!n) return;
-      walk(n.l); walk(n.r);
-      const cx = X(n.id), cy = Y(n.id);
-      if(n.ch){
-        nodes += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--node)" stroke="var(--bd)" stroke-width="1.5"/>`;
-        nodes += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--tx)">${esc(n.ch)}</text>`;
-        nodes += `<text x="${cx}" y="${cy + R + 13}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ac)" font-family="ui-monospace,Consolas,monospace">${esc(codes[n.ch] || '')}</text>`;
-      } else {
-        nodes += `<circle cx="${cx}" cy="${cy}" r="${R - 2}" fill="var(--acsoft)" stroke="var(--ac)" stroke-width="1.4"/>`;
-        nodes += `<text x="${cx}" y="${cy + 3.5}" text-anchor="middle" font-size="9.5" fill="var(--mut)">${f2(n.p)}</text>`;
+      walk0(n);
+      function walk0(m){
+        const cx = X(m.id), cy = Y(m.id);
+        if(m.ch !== undefined && m.ch !== null){
+          nodes += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--node)" stroke="var(--bd)" stroke-width="1.5"/>`
+            + `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="var(--tx)">${esc(m.ch)}</text>`
+            + `<text x="${cx}" y="${cy + R + 13}" text-anchor="middle" font-size="10.5" fill="var(--mut)">${f2(m.p)}</text>`;
+        } else if(o.sums){
+          nodes += `<circle cx="${cx}" cy="${cy}" r="${R - 2}" fill="var(--acsoft)" stroke="var(--ac)" stroke-width="1.4"/>`
+            + `<text x="${cx}" y="${cy + 3.5}" text-anchor="middle" font-size="9.5" fill="var(--mut)">${f2(m.p)}</text>`;
+        } else {
+          nodes += `<circle cx="${cx}" cy="${cy}" r="5" fill="var(--card)" stroke="var(--tx)" stroke-width="1.4"/>`;
+        }
       }
+      if(n.l) walk(n.l);
+      if(n.r) walk(n.r);
     })(root);
-    return `<div class="tree-host"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Кодовое дерево Хаффмана">${edges}${nodes}</svg></div>`;
+    return `<div class="tree-host"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Кодовое дерево">${edges}${nodes}</svg></div>`;
   }
 
-  function infoHTML(){
-    const a = INFO[curCode];
-    return `
-      <h2>${a.name}</h2>
-      <p class="meta" style="margin:0 0 8px">${a.idea}</p>
-      <div class="algo-grid">
-        <div class="algo-cell"><b>Длина слова</b>${a.len}</div>
-        <div class="algo-cell"><b>Порядок символов</b>${a.order}</div>
-        <div class="algo-cell"><b>Гарантия</b>${a.bound}</div>
-        <div class="algo-cell"><b>Особенность</b>${a.feat}</div>
-      </div>`;
+  /* процесс построения кода Хаффмана: столбцы списков, скобки, синие стрелки сумм, красные коды */
+  function procSVG(Hf, upto, lblFrom){
+    const M = Hf.merges.length, n = Hf.stages[0].length;
+    const COLW = 150, ROWH = 44, X0 = 64, Y0 = 30;
+    const W = X0 + (upto + 1) * COLW + 20, Hh = Y0 + n * ROWH;
+    const X = c => X0 + c * COLW, Y = r => Y0 + r * ROWH;
+    const nd = id => Hf.byId[id];
+    let g = '<defs><marker id="pah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--tx)"/></marker>'
+      + '<marker id="pab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ac)"/></marker></defs>';
+    Hf.stages[0].forEach((id, r) => { g += `<text x="6" y="${Y(r) + 7}" font-size="18" font-weight="700" fill="var(--tx)">${esc(nd(id).ch)}</text>`; });
+    const red = (x, y, t) => `<text x="${x}" y="${y + 5}" font-size="15" font-weight="600" fill="var(--bad)" font-family="ui-monospace,Consolas,monospace">${esc(t)}</text>`;
+    for(let c = 0; c <= upto; c++){
+      const col = Hf.stages[c];
+      col.forEach((id, r) => { g += `<text x="${X(c)}" y="${Y(r) + 7}" font-size="20" fill="var(--tx)">${f2(nd(id).p)}</text>`; });
+      if(c < upto){
+        const mg = Hf.merges[c], nxt = Hf.stages[c + 1], len = col.length;
+        col.slice(0, len - 2).forEach((id, r) => {
+          g += `<line x1="${X(c) + 50}" y1="${Y(r)}" x2="${X(c + 1) - 6}" y2="${Y(nxt.indexOf(id))}" stroke="var(--tx)" stroke-width="1.2" marker-end="url(#pah)"/>`;
+        });
+        const yA = Y(len - 2), yB = Y(len - 1), xb = X(c) + 58;
+        g += `<path d="M${xb} ${yA - 12}h8V${yB + 12}h-8" fill="none" stroke="var(--tx)" stroke-width="1.3"/>`;
+        g += `<line x1="${xb + 8}" y1="${(yA + yB) / 2}" x2="${X(c + 1) - 6}" y2="${Y(nxt.indexOf(mg.m))}" stroke="var(--ac)" stroke-width="1.5" marker-end="url(#pab)"/>`;
+        if(c >= lblFrom){ g += red(xb + 14, yA, nd(mg.a).code) + red(xb + 14, yB, nd(mg.b).code); }
+      } else if(upto === M && M >= 0 && col.length === 2 && lblFrom <= M){
+        g += red(X(c) + 54, Y(0), nd(col[0]).code) + red(X(c) + 54, Y(1), nd(col[1]).code);
+      }
+    }
+    return `<svg width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Процесс построения кода Хаффмана">${g}</svg>`;
   }
 
   /* ---------- построение шагов ---------- */
@@ -414,7 +469,7 @@
     });
     steps.push({
       title:'Вероятности символов',
-      text:`Считаем частоты: ${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} раз → p = ${e.n}/${N} = ${f2(e.p)}`).join(', ')}.<span class="l">Сумма вероятностей ${f2(sumP)} (из-за округления может отличаться от 1). Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f4(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
+      text:`Считаем частоты: ${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} раз → p = ${e.n}/${N} = ${f2(e.p)}`).join(', ')}.<span class="l">Сумма вероятностей ${f2(sumP)} (из-за округления может отличаться от 1). Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f2(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
       html:probsHTML(entries)
     });
     if(orderNote === 'sort'){
@@ -425,23 +480,29 @@
       });
     } else if(orderNote === 'alpha'){
       steps.push({
-        title:'Порядок символов не меняется',
-        text:`Коду Гилберта—Муру сортировка не нужна: символы обрабатываются в исходном порядке ${DATA.entries.map(e => esc(e.ch)).join(' → ')}, а код строится по серединам их интервалов.`,
-        html:probsHTML(DATA.entries)
+        title:'Символы в алфавитном порядке',
+        text:`Код Гилберта—Мура алфавитный: слова идут в том же порядке, что и символы. Поэтому сортировка по вероятности не нужна, символы берутся по алфавиту: ${DATA.alpha.map(e => `${esc(e.ch)}(${f2(e.p)})`).join(' → ')}.`,
+        html:probsHTML(DATA.alpha)
       });
     }
   }
 
+  function treeStep(list, text){
+    steps.push({title:'Кодовое дерево', text, html:treeHTML(trie(list)), tree:true});
+  }
+
   function finalSteps(mode, list){
+    const bound = curCode === 'gm' ? 2 : 1;
+    const L = list.reduce((s, e) => s + e.p * e.l, 0);
     steps.push({
       title:'Проверка неравенства Крафта',
-      text:`Считаем Σ 2<sup>−l<sub>i</sub></sup> по длинам полученных слов. Сумма не превосходит 1 — значит, такой набор длин префиксного кода допустим, и построенный код действительно префиксный (ни одно слово не является началом другого).`,
+      text:`Считаем Σ 1/2<sup>L<sub>i</sub></sup> по длинам полученных слов. Сумма не превосходит 1, значит префиксный код с такими длинами существует, и построенный код префиксный: ни одно слово не является началом другого.`,
       html:tableHTML(list, list.length, null, mode) + kraftHTML(list)
     });
     steps.push({
-      title:'Средняя длина кодового слова',
-      text:`L = Σ p<sub>i</sub>·l<sub>i</sub> — сколько бит в среднем уходит на один символ. Сравните с энтропией H = ${f4(ALL.H)} бит: L всегда не меньше H, а разность L − H — избыточность кода.`,
-      html:tableHTML(list, list.length, null, mode) + lenHTML(list)
+      title:'Средняя длина и энтропия',
+      text:`L<sub>ср</sub> = Σ L<sub>i</sub>·p<sub>i</sub> — сколько бит в среднем уходит на один символ: <b>${f2(L)}</b>. Энтропия источника H = <b>${f2(ALL.H)}</b>. Всегда L<sub>ср</sub> ≥ H, а для этого кода ${f2(L)} ${L < ALL.H + bound ? '&lt;' : '≥'} ${f2(ALL.H)} + ${bound}.<span class="l">Избыточность L<sub>ср</sub> − H = ${f2(L - ALL.H)}.</span>`,
+      html:tableHTML(list, list.length, null, mode) + lenHTML(list) + entHTML(list)
     });
     steps.push({
       title:'Сравнение всех кодов',
@@ -457,16 +518,17 @@
       c.list.forEach((e, k) => {
         steps.push({
           title:`Длина слова для «${e.ch}»`,
-          text:`−log₂p = −log₂${f2(e.p)} = ${f3(e.log)}${e.l === 0 ? ' — вероятность 1, слово пустое, l = 0.' : `, округляем вверх: l = ⌈${f3(e.log)}⌉ = <b>${e.l}</b>.`}`,
-          html:tableHTML(c.list, k, {log:true}, 'shannon')
+          text:`p = ${f2(e.p)}. Подбираем L из неравенства 1/2<sup>L</sup> ≤ p &lt; 1/2<sup>L−1</sup>: ${pw(e.l)} ≤ ${f2(e.p)} &lt; ${pw(e.l - 1)}, значит L = <b>${e.l}</b>.`,
+          html:tableHTML(c.list, k, true, 'sh')
         });
         steps.push({
           title:`Кодовое слово для «${e.ch}»`,
-          text:`Накопленная вероятность Q = ${f2(e.Q)}. В двоичной системе: 0,${e.bits.slice(0, 8)}… Первые <b>${e.l}</b> бит и дают код <b class="cw">${e.code ? esc(e.code) : '—'}</b>.`,
-          html:tableHTML(c.list, k + 1, null, 'shannon')
+          text:`Накопленная вероятность Q = сумма вероятностей предыдущих символов = ${fq(e.Q)}. В двоичной системе Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> знаков после запятой дают код <b class="cw">${e.code ? esc(e.code) : '—'}</b>.`,
+          html:tableHTML(c.list, k + 1, false, 'sh')
         });
       });
-      finalSteps('shannon', c.list);
+      treeStep(c.list, 'Каждое кодовое слово — путь от корня: 0 влево, 1 вправо. Ребро подписано префиксом слова, лист — символом. Если в дереве есть узлы с одним потомком, неравенство Крафта даёт сумму меньше 1: часть кодовых слов остаётся неиспользованной.');
+      finalSteps('sh', c.list);
     },
 
     gm(){
@@ -475,15 +537,16 @@
       c.list.forEach((e, k) => {
         steps.push({
           title:`Длина слова для «${e.ch}»`,
-          text:`l = ⌈−log₂p⌉ + 2 = ⌈${f3(e.log)}⌉ + 2 = <b>${e.l}</b>.<span class="l">Запасной разряд нужен, чтобы двоичный интервал слова целиком лежал внутри интервала символа — тогда код гарантированно префиксный.</span>`,
-          html:tableHTML(c.list, k, {log:true}, 'gm')
+          text:`p = ${f2(e.p)}. L = ⌈−log₂p⌉ + 1 = ⌈${f3(e.log)}⌉ + 1 = <b>${e.l}</b>, то есть ${pw(e.l - 1)} ≤ ${f2(e.p)} &lt; ${pw(e.l - 2)}.<span class="l">Лишний разряд нужен, чтобы двоичный интервал слова целиком лежал внутри интервала символа: тогда код префиксный.</span>`,
+          html:tableHTML(c.list, k, true, 'gm')
         });
         steps.push({
           title:`Кодовое слово для «${e.ch}»`,
-          text:`Середина интервала: Q = (сумма предыдущих) + p/2 = ${f3(e.Q)}. В двоичной системе: 0,${e.bits.slice(0, 8)}… Первые <b>${e.l}</b> бит — код <b class="cw">${esc(e.code)}</b>.`,
-          html:tableHTML(c.list, k + 1, null, 'gm')
+          text:`Середина интервала: Q = (сумма предыдущих) + p/2 = ${fq(e.Q)}. В двоичной системе Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> бит — код <b class="cw">${esc(e.code)}</b>.`,
+          html:tableHTML(c.list, k + 1, false, 'gm')
         });
       });
+      treeStep(c.list, 'Листья дерева слева направо идут в алфавитном порядке символов: так и устроен алфавитный код.');
       finalSteps('gm', c.list);
     },
 
@@ -506,42 +569,50 @@
         });
       });
       steps.push({
-        title:'Кодовое дерево разбиений завершено',
-        text:`В каждой группе остался один символ — коды готовы: ${c.list.map(e => `«<b>${esc(e.ch)}</b>» → <b class="cw">${e.code ? esc(e.code) : '—'}</b>`).join(', ')}.`,
-        html:frowHTML(c.list, null, prefixMap, {fin:true})
+        title:'Таблица кода Фано',
+        text:`В каждой группе остался один символ — коды готовы. Жирные линии в таблице показывают, где проходила граница деления на каждом разряде.`,
+        html:fanoTable(c.list)
       });
-      finalSteps('code', c.list);
+      treeStep(c.list, 'Дерево показывает те же деления: каждое разбиение группы — это ветвление на 0 и 1.');
+      finalSteps('fano', c.list);
     },
 
     huffman(){
       const c = ALL.huffman;
       introSteps('sort');
-      steps.push({
-        title:'Стартовая очередь',
-        text:`Выписываем символы по возрастанию вероятностей: ${c.merges.length ? 'на каждом шаге будем брать два первых (наименьших) узла' : 'узел один — код пустой'}.`,
-        html:queueHTML(c.merges.length ? c.merges[0].before : [{p:c.root.p, ch:c.root.ch}])
-      });
-      c.merges.forEach((m, i) => {
+      const nd = id => c.byId[id];
+      const label = id => nd(id).ch ? `«<b>${esc(nd(id).ch)}</b>» (${f2(nd(id).p)})` : `узел ${f2(nd(id).p)}`;
+      const M = c.merges.length;
+      if(c.stages[0].length < 2){
+        steps.push({title:'Единственный символ', text:'В наборе один символ, его код пустой: длина слова 0, передавать нечего.', html:''});
+      } else {
         steps.push({
-          title:`Шаг ${i + 1}: два наименьших`,
-          text:`Наименьшие вероятности — у ${m.a.ch ? `«<b>${esc(m.a.ch)}»` : 'узла'} (${f2(m.a.p)}) и ${m.b.ch ? `«<b>${esc(m.b.ch)}»` : 'узла'} (${f2(m.b.p)})${m.a.p === m.b.p ? ' — равные, берём первые по порядку' : ''}.`,
-          html:queueHTML(m.before)
+          title:'Исходный список',
+          text:`Выписываем вероятности по убыванию. Дальше две последние (наименьшие) складываем, а сумму ставим в список на своё место.`,
+          html:procSVG(c, 0, 1e9), tree:true
         });
-        steps.push({
-          title:`Шаг ${i + 1}: слияние`,
-          text:`Сливаем их в новый узел с вероятностью ${f2(m.a.p)} + ${f2(m.b.p)} = <b>${f2(m.mp)}</b> и ставим его в очередь по возрастанию.`,
-          html:queueHTML(m.after)
+        c.merges.forEach((m, i) => {
+          steps.push({
+            title:`Шаг ${i + 1}: слияние двух наименьших`,
+            text:`Две наименьшие вероятности — ${label(m.a)} и ${label(m.b)}. Складываем: ${f2(nd(m.a).p)} + ${f2(nd(m.b).p)} = <b>${f2(nd(m.m).p)}</b>. Сумма встаёт в список ниже равных по величине, список остаётся упорядоченным по убыванию. Скобка объединяет слагаемые, синяя стрелка ведёт к сумме.`,
+            html:procSVG(c, i + 1, 1e9), tree:true
+          });
         });
+        for(let b = M; b >= 0; b--){
+          const text = b === M
+            ? `В списке осталось два элемента: верхнему приписываем <b>0</b>, нижнему <b>1</b>. Это самые короткие префиксы.`
+            : `Возвращаемся на шаг ${b + 1}: сумма ${f2(nd(c.merges[b].m).p)} с кодом <b class="cw">${nd(c.merges[b].m).code}</b> состоит из двух слагаемых. Верхнему дописываем 0, нижнему 1: <b class="cw">${nd(c.merges[b].a).code}</b> и <b class="cw">${nd(c.merges[b].b).code}</b>.`;
+          steps.push({title:b === M ? 'Раздаём биты: последний столбец' : `Раздаём биты: столбец ${b + 1}`, text, html:procSVG(c, M, b), tree:true});
+        }
+      }
+      steps.push({
+        title:'Кодовое дерево',
+        text:`Слияния собираются в двоичное дерево: левое ребро — бит 0, правое — 1. В листьях символы, в узлах суммы вероятностей. Код символа — путь от корня к листу.`,
+        html:treeHTML(c.root, {sums:true}), tree:true
       });
       steps.push({
-        title:'Кодовое дерево Хаффмана',
-        text:`Слияния закончены — осталось одно дерево. Левое ребро — бит <b>0</b>, правое — <b>1</b>; код символа читается от корня к листу и подписан под символом.`,
-        html:treeHTML(),
-        tree:true
-      });
-      steps.push({
-        title:'Коды символов',
-        text:`Коды готовы: ${c.list.map(e => `«<b>${esc(e.ch)}</b>» → <b class="cw">${e.code ? esc(e.code) : '—'}</b> (l = ${e.l})`).join(', ')}.`,
+        title:'Код Хаффмана',
+        text:`Коды готовы: ${c.list.map(e => `«<b>${esc(e.ch)}</b>» → <b class="cw">${e.code ? esc(e.code) : '—'}</b>`).join(', ')}.`,
         html:tableHTML(c.list, c.list.length, null, 'code')
       });
       finalSteps('code', c.list);
@@ -557,7 +628,7 @@
     kEl.textContent = f3(cur.kraft);
     kEl.style.color = cur.kraft <= 1 + 1e-9 ? 'var(--ok)' : 'var(--bad)';
     $('mD').textContent = f3(cur.L - H);
-    $('mNote').innerHTML = `H = −Σp<sub>i</sub>·log₂p<sub>i</sub> — теоретический предел. L = Σp<sub>i</sub>·l<sub>i</sub>. Крафт: Σ2<sup>−l<sub>i</sub></sup> ≤ 1. Всё считается по p<sub>i</sub>, округлённым до 0,01.`;
+    $('mNote').innerHTML = `H = −Σp<sub>i</sub>·log₂p<sub>i</sub> — теоретический предел. L = Σp<sub>i</sub>·L<sub>i</sub>. Крафт: Σ2<sup>−L<sub>i</sub></sup> ≤ 1. Всё считается по p<sub>i</sub>, округлённым до 0,01.`;
     const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт—Мур']];
     const minL = Math.min.apply(null, order.map(o => ALL[o[0]].L));
     $('cmpBox').innerHTML = '<div class="cmp-title">Сравнение кодов</div>'
@@ -583,22 +654,32 @@
     const countMap = new Map();
     chars.forEach(ch => countMap.set(ch, (countMap.get(ch) || 0) + 1));
     const entries = [...countMap.entries()].map(([ch, n], i) => {
-      const p = Math.round(n * 100 / N) / 100;
+      const ph = Math.round(n * 100 / N), p = ph / 100;
       const occ = n > 1
         ? `<i class="occ">${esc(ch)}${Array.from({length: n - 1}, (_, k) => ' ' + esc(ch) + '<span class="pr">' + '′'.repeat(k + 1) + '</span>').join('')}</i>`
         : '';
-      return {ch, n, p, i, occ, log:-Math.log2(p)};
+      return {ch, n, ph, p, i, occ, log:-Math.log2(p)};
     });
-    const sorted = entries.slice().sort((a, b) => b.p - a.p || a.i - b.i);
-    DATA = {chars, N, entries, sorted};
+    const sorted = entries.slice().sort((a, b) => b.ph - a.ph || a.i - b.i);
+    const alpha = entries.slice().sort((a, b) => a.ch < b.ch ? -1 : a.ch > b.ch ? 1 : 0);
+    DATA = {chars, N, entries, sorted, alpha};
     ALL = {
       shannon:calcShannon(sorted),
       fano:calcFano(sorted),
-      huffman:calcHuffman(sorted, entries),
-      gm:calcGM(entries),
+      huffman:calcHuffman(sorted),
+      gm:calcGM(alpha),
       H:entries.reduce((s, e) => s + e.p * e.log, 0)
     };
-    $('codeInfo').innerHTML = infoHTML();
+    const a = INFO[curCode];
+    $('codeInfo').innerHTML = `
+      <h2>${a.name}</h2>
+      <p class="meta" style="margin:0 0 8px">${a.idea}</p>
+      <div class="algo-grid">
+        <div class="algo-cell"><b>Длина слова</b>${a.len}</div>
+        <div class="algo-cell"><b>Порядок символов</b>${a.order}</div>
+        <div class="algo-cell"><b>Гарантия</b>${a.bound}</div>
+        <div class="algo-cell"><b>Особенность</b>${a.feat}</div>
+      </div>`;
     BUILD[curCode]();
     player.setSteps(steps);
     fillMetrics();
