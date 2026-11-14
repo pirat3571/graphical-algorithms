@@ -56,7 +56,7 @@
 
   <section class="card" id="codeInfo"></section>
 
-  <div class="sort-layout">
+  <div class="sort-layout keep-meter">
     <div id="stage"></div>
     <aside class="meter-box" aria-live="polite">
       <h3>Метрики кода</h3>
@@ -133,6 +133,7 @@
 <script src="assets/stats.js?v=1"></script>
 <script src="assets/quiz.js?v=6"></script>
 <script src="assets/algo.js?v=4"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
@@ -142,6 +143,206 @@
   let steps = [];
   let ALL = null;
   let DATA = null;
+
+  /* ---------- Код на C: подсвечиваются строки текущего шага ---------- */
+  const L = (text, tag) => [text, tag || ''];
+  const CODES = {
+    arith:{
+      title:'Арифметическое кодирование на C',
+      desc:'Всё сообщение кодируется одним числом из интервала. Подсвечены строки текущего шага.',
+      foot:'<b>l</b> и <b>h</b> — нижняя и верхняя границы интервала, <b>r = h − l</b> — его длина, <b>Q[i]</b> — кумулятивные вероятности (<b>Q[0] = 0</b>), <b>m</b> — номер символа в алфавите. На сайте вычисления идут точными целыми числами, а <b>double</b> годится только для коротких сообщений.',
+      code:[
+        L('#include <math.h>'), L(''),
+        L('double Q[N + 1];                 /* Q[i] = P[1] + ... + P[i], Q[0] = 0 */', 'init'),
+        L('int index_of(char c);            /* номер символа в алфавите, 1..n */', 'init'), L(''),
+        L('void arith_encode(const char *msg) {', 'init'),
+        L('    double l = 0, r = 1;', 'init'),
+        L('    for (int t = 0; msg[t] != 0; t++) {', 'loop'),
+        L('        int m = index_of(msg[t]);', 'read'),
+        L('        double h = l + r * Q[m];', 'upd'),
+        L('        l = l + r * Q[m - 1];', 'upd'),
+        L('        r = h - l;               /* длина интервала */', 'upd'),
+        L('    }', 'loop'),
+        L('    int k = 0;', 'bits'),
+        L('    while (ldexp(1.0, -k) > r) k++;     /* наименьшее k: 1/2^k <= r */', 'bits'),
+        L('    long long M = (long long)ceil(ldexp(l, k));   /* l * 2^k, вверх */', 'bits2'),
+        L('    for (int b = k - 1; b >= 0; b--)    /* M в двоичной записи из k разрядов */', 'bits2'),
+        L('        putchar(((M >> b) & 1) ? \'1\' : \'0\');', 'bits2'),
+        L('}', 'bits2')
+      ]
+    },
+    arithDec:{
+      title:'Арифметическое декодирование на C',
+      desc:'Декодер знает число, вероятности символов и длину сообщения. Подсвечены строки текущего шага.',
+      foot:'<b>value</b> — число, заданное кодом (<b>M / 2^k</b>), <b>length</b> — длина сообщения, <b>n</b> — число символов алфавита, <b>alphabet[j]</b> — j-й символ.',
+      code:[
+        L('void arith_decode(double value, int length) {', 'init'),
+        L('    double l = 0, r = 1;', 'init'),
+        L('    for (int t = 0; t < length; t++) {', 'loop'),
+        L('        int j;', 'find'),
+        L('        double lj, hj;', 'find'),
+        L('        for (j = 1; j <= n; j++) {', 'find'),
+        L('            lj = l + r * Q[j - 1];', 'find'),
+        L('            hj = l + r * Q[j];', 'find'),
+        L('            if (lj <= value && value < hj) break;', 'find'),
+        L('        }', 'find'),
+        L('        putchar(alphabet[j]);', 'out'),
+        L('        l = lj;                  /* новый интервал */', 'out'),
+        L('        r = hj - lj;', 'out'),
+        L('    }', 'loop'),
+        L('}', 'out')
+      ]
+    },
+    treeDec:{
+      title:'Декодирование по дереву кода на C',
+      desc:'Подходит для любого префиксного кода. Подсвечены строки текущего шага.',
+      foot:'<b>p</b> — текущая вершина дерева. Лист — вершина без потомков, в ней записан символ. Дойдя до листа, возвращаемся в корень.',
+      code:[
+        L('struct vertex {'), L('    char symbol;'), L('    struct vertex *left, *right;    /* у листа оба равны NULL */'), L('};'), L(''),
+        L('void decode(struct vertex *root, const char *bits) {', 'init'),
+        L('    struct vertex *p = root;', 'init'),
+        L('    for (int t = 0; bits[t] != 0; t++) {', 'loop read'),
+        L('        if (bits[t] == \'0\') p = p->left;', 'walk'),
+        L('        else p = p->right;', 'walk'),
+        L('        if (p->left == NULL && p->right == NULL) {', 'leaf'),
+        L('            putchar(p->symbol);', 'leaf'),
+        L('            p = root;            /* вернуться в корень */', 'leaf'),
+        L('        }', 'leaf'),
+        L('    }', 'loop'),
+        L('}', 'init')
+      ]
+    },
+    shannon:{
+      title:'Код Шеннона на C',
+      desc:'Построение кода по накопленным вероятностям. Подсвечены строки текущего шага.',
+      foot:'<b>n</b> — число символов, <b>P</b> — вероятности по убыванию, <b>Q</b> — накопленные вероятности, <b>L</b> — длины слов, <b>C[i][j]</b> — j-й бит слова i. Условие <b>1/2^L ≤ P &lt; 1/2^(L−1)</b> равносильно <b>L = ⌈−log₂P⌉</b>.',
+      code:[
+        L('#include <math.h>'), L(''),
+        L('void shannon(int n, double P[], double Q[], int L[], int C[][32]) {', 'q'),
+        L('    Q[0] = 0;', 'q'),
+        L('    for (int i = 1; i <= n; i++) {', 'q'),
+        L('        Q[i] = Q[i - 1] + P[i];          /* накопленная вероятность */', 'q'),
+        L('        L[i] = (int)ceil(-log2(P[i]));   /* длина слова */', 'len'),
+        L('    }', 'q'), L(''),
+        L('    for (int i = 1; i <= n; i++) {', 'bits'),
+        L('        double x = Q[i - 1];', 'bits'),
+        L('        for (int j = 1; j <= L[i]; j++) {', 'bits'),
+        L('            x = x * 2;', 'bits'),
+        L('            if (x >= 1) { C[i][j] = 1; x -= 1; }', 'bits'),
+        L('            else C[i][j] = 0;', 'bits'),
+        L('        }', 'bits'),
+        L('    }', 'bits'),
+        L('}', 'bits')
+      ]
+    },
+    fano:{
+      title:'Код Фано на C',
+      desc:'Рекурсивное деление списка на две части. Подсвечены строки текущего шага.',
+      foot:'<b>P</b> — вероятности по убыванию, <b>L</b> и <b>R</b> — границы обрабатываемой части, <b>k</b> — длина уже построенной части кодов, <b>C</b> — матрица кодовых слов, <b>Length</b> — длины слов. Вызов: <b>fano(1, n, 0)</b>.',
+      code:[
+        L('#include <math.h>'), L(''),
+        L('double P[N];'), L('int C[N][32], Length[N];'), L(''),
+        L('int med(int L, int R) {                /* лучшая граница деления */', 'med2'),
+        L('    double total = 0, S = 0, best = 1e9;', 'med2'),
+        L('    int m = L;', 'med2'),
+        L('    for (int i = L; i <= R; i++) total += P[i];', 'med2'),
+        L('    for (int i = L; i < R; i++) {', 'med2'),
+        L('        S += P[i];', 'med2'),
+        L('        if (fabs(2 * S - total) < best) {', 'med2'),
+        L('            best = fabs(2 * S - total);', 'med2'),
+        L('            m = i;', 'med2'),
+        L('        }', 'med2'),
+        L('    }', 'med2'),
+        L('    return m;', 'med2'),
+        L('}', 'med2'), L(''),
+        L('void fano(int L, int R, int k) {', 'sig'),
+        L('    if (L < R) {', 'sig'),
+        L('        k++;', 'assign'),
+        L('        int m = med(L, R);               /* верхней части 0, нижней 1 */', 'med'),
+        L('        for (int i = L; i <= R; i++) {', 'assign'),
+        L('            C[i][k] = (i <= m) ? 0 : 1;', 'assign'),
+        L('            Length[i]++;', 'assign'),
+        L('        }', 'assign'),
+        L('        fano(L, m, k);', 'rec'),
+        L('        fano(m + 1, R, k);', 'rec'),
+        L('    }', 'sig'),
+        L('}', 'sig')
+      ]
+    },
+    huffman:{
+      title:'Код Хаффмана на C',
+      desc:'Рекурсия: складываем две наименьшие вероятности, а на обратном ходе достраиваем коды. Подсвечены строки текущего шага.',
+      foot:'<b>n</b> — число символов, <b>P</b> — вероятности по убыванию, <b>C[i][b]</b> — b-й бит слова i, <b>L</b> — длины слов. <b>up</b> вставляет сумму в список ниже равных, <b>down</b> достраивает коды при возврате из рекурсии. Вызов: <b>huffman(n)</b>.',
+      code:[
+        L('double P[N];'), L('int C[N][32], L[N];'), L(''),
+        L('int up(int n, double q) {              /* вставить сумму q в список */', 'up'),
+        L('    int j = 1;', 'up'),
+        L('    for (int i = n - 1; i >= 2; i--) {', 'up'),
+        L('        if (P[i - 1] < q) P[i] = P[i - 1];   /* сдвиг вниз */', 'up'),
+        L('        else { j = i; break; }', 'up'),
+        L('    }', 'up'),
+        L('    P[j] = q;', 'up'),
+        L('    return j;', 'up'),
+        L('}', 'up'), L(''),
+        L('void down(int n, int j) {              /* достроить коды */', 'down'),
+        L('    int S[32], len = L[j];', 'down'),
+        L('    for (int b = 1; b <= len; b++) S[b] = C[j][b];   /* код суммы */', 'down'),
+        L('    for (int i = j; i <= n - 2; i++) {', 'down'),
+        L('        for (int b = 1; b <= L[i + 1]; b++) C[i][b] = C[i + 1][b];', 'down'),
+        L('        L[i] = L[i + 1];                             /* сдвиг вверх */', 'down'),
+        L('    }', 'down'),
+        L('    for (int b = 1; b <= len; b++) C[n - 1][b] = C[n][b] = S[b];', 'down'),
+        L('    C[n - 1][len + 1] = 0;  C[n][len + 1] = 1;', 'down'),
+        L('    L[n - 1] = L[n] = len + 1;', 'down'),
+        L('}', 'down'), L(''),
+        L('void huffman(int n) {', 'sig'),
+        L('    if (n == 2) {', 'base'),
+        L('        C[1][1] = 0;  L[1] = 1;', 'base'),
+        L('        C[2][1] = 1;  L[2] = 1;', 'base'),
+        L('    } else {', 'sig'),
+        L('        double q = P[n - 1] + P[n];      /* сумма двух наименьших */', 'sum'),
+        L('        int j = up(n, q);', 'sum'),
+        L('        huffman(n - 1);', 'rec'),
+        L('        down(n, j);', 'down'),
+        L('    }', 'sig'),
+        L('}', 'sig')
+      ]
+    },
+    gm:{
+      title:'Код Гилберта—Мура на C',
+      desc:'Символы идут по алфавиту, код берётся из середины интервала. Подсвечены строки текущего шага.',
+      foot:'<b>P</b> — вероятности символов по алфавиту, <b>Q</b> — сумма вероятностей предыдущих символов, <b>x</b> — середина интервала символа, <b>C[i][j]</b> — j-й бит слова i.',
+      code:[
+        L('#include <math.h>'), L(''),
+        L('void gilbert_moore(int n, double P[], int L[], int C[][32]) {', 'init'),
+        L('    double Q = 0;', 'init'),
+        L('    for (int i = 1; i <= n; i++) {        /* символы по алфавиту */', 'init'),
+        L('        double x = Q + P[i] / 2;          /* середина интервала */', 'code'),
+        L('        L[i] = (int)ceil(-log2(P[i])) + 1;', 'len'),
+        L('        for (int j = 1; j <= L[i]; j++) {', 'code'),
+        L('            x = x * 2;', 'code'),
+        L('            C[i][j] = (x >= 1);', 'code'),
+        L('            if (x >= 1) x -= 1;', 'code'),
+        L('        }', 'code'),
+        L('        Q += P[i];', 'init'),
+        L('    }', 'init'),
+        L('}', 'init')
+      ]
+    }
+  };
+  function codeKey(){ return curCode === 'decode' ? ($('decMethod').value === 'arith' ? 'arithDec' : 'treeDec') : curCode; }
+  const pocket = S.mountPocket({key:'codingCodeOpen', title:'', code:CODES.arith.code});
+  function codeTags(st){
+    const t = st.title || '', k = codeKey();
+    if(k === 'arith') return /^Символ/.test(t) ? ['loop', 'read', 'upd'] : /^Идея|^Интервалы/.test(t) ? ['init'] : /^Сколько бит/.test(t) ? ['bits'] : /^Код сообщения/.test(t) ? ['bits2'] : [];
+    if(k === 'arithDec') return /^Что получает/.test(t) ? ['init'] : /^Символ/.test(t) ? ['loop', 'find', 'out'] : [];
+    if(k === 'treeDec') return /^Что получает/.test(t) ? ['init'] : /^Символ/.test(t) ? ['loop', 'read', 'walk', 'leaf'] : [];
+    if(k === 'shannon') return /^Длина слова/.test(t) ? ['q', 'len'] : /^Кодовое слово/.test(t) ? ['bits'] : [];
+    if(k === 'gm') return /^Длина слова/.test(t) ? ['init', 'len'] : /^Кодовое слово/.test(t) ? ['code'] : [];
+    if(k === 'fano') return /^Делим/.test(t) ? ['sig', 'med', 'med2'] : /^Биты/.test(t) ? ['assign'] : /^Таблица/.test(t) ? ['rec'] : [];
+    if(k === 'huffman') return /^Исходный список/.test(t) ? ['sig'] : /^Шаг/.test(t) ? ['sum', 'up', 'rec'] : /^Раздаём биты: последний/.test(t) ? ['base', 'down'] : /^Раздаём/.test(t) ? ['down'] : [];
+    return [];
+  }
 
   const INFO = {
     arith:{
@@ -199,7 +400,8 @@
     render(canvas, step){
       canvas.classList.toggle('compact', !step.tree);
       canvas.innerHTML = step.html || '';
-    }
+    },
+    onStep(step){ pocket.show(step.code || []); }
   });
 
   /* ---------- вспомогательные ---------- */
@@ -395,7 +597,7 @@
   }
 
   function cmpHTML(){
-    const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт-Мур']];
+    const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт—Мур']];
     const minL = Math.min.apply(null, order.map(o => ALL[o[0]].L));
     let h = '<div class="code-cmp">'
       + `<div class="cmp-row hrow"><span>Энтропия H</span><span class="cr"><b>${f3(ALL.H)}</b><i>предел сжатия</i></span></div>`;
@@ -844,7 +1046,7 @@
     kEl.style.color = kr === null ? '' : (kr <= 1 + 1e-9 ? 'var(--ok)' : 'var(--bad)');
     $('mD').textContent = f3(Lv - H);
     $('mNote').innerHTML = `H = −Σp<sub>i</sub>·log₂p<sub>i</sub> — теоретический предел. L = Σp<sub>i</sub>·L<sub>i</sub>. Крафт: Σ2<sup>−L<sub>i</sub></sup> ≤ 1. Для побуквенных кодов всё считается по p<sub>i</sub>, округлённым до 0,01.${isA ? ' Для арифметического кода L — число бит кода, делённое на длину сообщения.' : ''}`;
-    const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт-Мур']];
+    const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт—Мур']];
     const minL = Math.min.apply(null, order.map(o => ALL[o[0]].L));
     $('cmpBox').innerHTML = '<div class="cmp-title">Сравнение кодов</div>'
       + `<div class="cmp-row hrow"><span>H (энтропия)</span><span class="cr"><b>${f3(H)}</b><i>предел</i></span></div>`
@@ -899,7 +1101,10 @@
         <div class="algo-cell"><b>Гарантия</b>${a.bound}</div>
         <div class="algo-cell"><b>Особенность</b>${a.feat}</div>
       </div>`;
+    const ck = codeKey();
+    pocket.setCode(CODES[ck].code, {title:CODES[ck].title, desc:CODES[ck].desc, foot:CODES[ck].foot});
     BUILD[curCode]();
+    steps.forEach(st => { st.code = codeTags(st); });
     player.setSteps(steps);
     fillMetrics();
   }
