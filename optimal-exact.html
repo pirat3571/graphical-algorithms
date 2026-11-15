@@ -65,12 +65,76 @@
 <script src="assets/core.js?v=4"></script>
 <script src="assets/stats.js?v=1"></script>
 <script src="assets/quiz.js?v=6"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
   const S = window.TreeSite;
   const $ = S.$;
   const nz = x => Math.round(x * 1e6) / 1e6;
+
+  /* ---------- Код на C: подсвечиваются строки текущего шага ---------- */
+  const L = (text, tag) => [text, tag || ''];
+  const CODE = [
+    L('#define N 10', 'decl'),
+    L('double W[N + 1];                      /* веса вершин V[1..n], ключи по возрастанию */', 'decl'),
+    L('double AW[N + 1][N + 1];              /* вес поддерева из вершин V[i+1..j] */', 'decl'),
+    L('double AP[N + 1][N + 1];              /* его взвешенная высота */', 'decl'),
+    L('int    AR[N + 1][N + 1];              /* номер корня */', 'decl'), L(''),
+    L('void optimal_tree(int n) {', 'decl'),
+    L('    for (int i = 0; i <= n; i++)', 'empty'),
+    L('        AW[i][i] = AP[i][i] = AR[i][i] = 0;      /* пустые поддеревья */', 'empty'), L(''),
+    L('    for (int i = 0; i <= n; i++)                 /* матрица весов */', 'w'),
+    L('        for (int j = i + 1; j <= n; j++)', 'w'),
+    L('            AW[i][j] = AW[i][j - 1] + W[j];', 'w'), L(''),
+    L('    for (int i = 0; i <= n - 1; i++) {           /* размер поддерева h = 1 */', 'h1'),
+    L('        int j = i + 1;', 'h1'),
+    L('        AP[i][j] = AW[i][j];', 'h1'),
+    L('        AR[i][j] = j;', 'h1'),
+    L('    }', 'h1'), L(''),
+    L('    for (int h = 2; h <= n; h++)                 /* размер поддерева h > 1 */', 'h2'),
+    L('        for (int i = 0; i <= n - h; i++) {', 'h2'),
+    L('            int j = i + h;', 'h2'),
+    L('            int m = AR[i][j - 1];', 'h2'),
+    L('            double min = AP[i][m - 1] + AP[m][j];', 'h2'),
+    L('            for (int k = m + 1; k <= AR[i + 1][j]; k++) {', 'h2k'),
+    L('                double x = AP[i][k - 1] + AP[k][j];', 'h2k'),
+    L('                if (x < min) { m = k; min = x; }', 'h2k'),
+    L('            }', 'h2k'),
+    L('            AP[i][j] = min + AW[i][j];', 'h2'),
+    L('            AR[i][j] = m;', 'h2'),
+    L('        }', 'h2'),
+    L('}', 'decl'), L(''),
+    L('struct vertex { int data; struct vertex *left, *right; };', 'tree'),
+    L('struct vertex *root = NULL;', 'tree'),
+    L('int V[N + 1];                          /* ключи вершин V[1..n] */', 'tree'),
+    L('void add(struct vertex **root, int key);   /* вставка в дерево поиска */', 'tree'), L(''),
+    L('void create_tree(int L, int R) {       /* L, R — границы массива вершин */', 'tree'),
+    L('    if (L < R) {', 'tree'),
+    L('        int k = AR[L][R];', 'tree'),
+    L('        add(&root, V[k]);', 'tree'),
+    L('        create_tree(L, k - 1);', 'tree'),
+    L('        create_tree(k, R);', 'tree'),
+    L('    }', 'tree'),
+    L('}                                       /* вызов: create_tree(0, n) */', 'tree')
+  ];
+  const pocket = S.mountPocket({
+    key:'optExactCodeOpen',
+    title:'Оптимальное дерево на C',
+    desc:'Матрицы AW, AP, AR и построение дерева по матрице корней. Подсвечены строки текущего шага.',
+    foot:'<b>AW[i][j]</b> — вес поддерева из вершин V[i+1..j], <b>AP[i][j]</b> — его взвешенная высота, <b>AR[i][j]</b> — номер корня, <b>h = j − i</b> — размер поддерева. Перебор корней сужен до отрезка [AR[i][j−1]; AR[i+1][j]], поэтому матрицы считаются быстрее. На сайте для наглядности перебираются все k: стоимость P получается та же, а при равных стоимостях корень может оказаться другим.',
+    code:CODE
+  });
+  function codeTags(st){
+    const t = st.title || '';
+    if(/^Исходные/.test(t)) return ['decl'];
+    if(/^Пустые/.test(t)) return ['empty'];
+    if(/^Веса W/.test(t)) return ['w'];
+    const m = /^P<sub>(\d+),(\d+)<\/sub>/.exec(t);
+    if(m) return +m[2] - +m[1] === 1 ? ['h1'] : ['h2', 'h2k'];
+    if(/^r<sub>/.test(t)) return ['tree'];
+    return [];
+  }
   let n = 0, w = [], keys = [], weightMap = {}, seq = 0, root = null;
   const mk = d => ({id:++seq, d:String(d), l:null, r:null});
   const sb = (a, b) => `<sub>${a},${b}</sub>`;
@@ -87,6 +151,7 @@
       else host.innerHTML = '';
     },
     onStep(step){
+      pocket.show(step.code || []);
       if(step.dp && n) renderMats($('dp'), step.dp);
       else $('dp').innerHTML = '';
     }
@@ -249,6 +314,7 @@
       tree:S.clone(root),
       dp:snap({curM:'R', hot:[]})
     });
+    steps.forEach(st => { st.code = codeTags(st); });
     player.setSteps(steps);
   }
 

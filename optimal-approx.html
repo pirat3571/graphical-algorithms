@@ -68,13 +68,67 @@
   </nav>
 </main>
 <script src="assets/core.js?v=4"></script>
-<script src="assets/quiz.js?v=5"></script>
+<script src="assets/stats.js?v=1"></script>
+<script src="assets/quiz.js?v=6"></script>
+<script src="assets/pocket.js?v=4"></script>
 <script>
 (function(){
   'use strict';
   const S = window.TreeSite;
   const $ = S.$, esc = S.esc;
   const nz = x => Math.round(x * 1e6) / 1e6;
+
+  /* ---------- Код на C: подсвечиваются строки текущего шага ---------- */
+  const L = (text, tag) => [text, tag || ''];
+  const HEAD = [
+    L('struct vertex { int data; struct vertex *left, *right; };', 'decl'),
+    L('struct vertex *root = NULL;', 'decl'),
+    L('int V[N + 1];                        /* ключи вершин V[1..n] */', 'decl'),
+    L('double Wt[N + 1];                    /* их веса */', 'decl'),
+    L('void add(struct vertex **root, int key);   /* вставка в дерево поиска */', 'decl'), L('')
+  ];
+  const CODES = {
+    a1:{
+      title:'Алгоритм A1 на C',
+      desc:'Вершины по убыванию весов добавляются в обычное дерево поиска. Подсвечены строки текущего шага.',
+      foot:'<b>V</b> — ключи вершин, <b>Wt</b> — веса. Вершины с равными весами идут в порядке возрастания ключей. Вызов: <b>a1(n)</b>.',
+      code:HEAD.concat([
+        L('void sort_by_weight_desc(int V[], double Wt[], int n);   /* по убыванию весов */', 'sort'), L(''),
+        L('void a1(int n) {', 'sort'),
+        L('    sort_by_weight_desc(V, Wt, n);', 'sort'),
+        L('    for (int i = 1; i <= n; i++)', 'loop'),
+        L('        add(&root, V[i]);', 'add'),
+        L('}', 'sort')
+      ])
+    },
+    a2:{
+      title:'Алгоритм A2 на C',
+      desc:'Корень — центр тяжести отрезка, затем то же слева и справа. Подсвечены строки текущего шага.',
+      foot:'Ключи упорядочены по возрастанию. <b>wes</b> — вес отрезка V[L..R], <b>sum</b> — вес вершин левее текущей. Корень <b>V[k]</b>: <b>sum &lt; wes/2</b>, а вместе с ней <b>sum + Wt[k] ≥ wes/2</b>. Вызов: <b>a2(1, n)</b>. Необязательное «уточнение» (сравнение V[k−1], V[k], V[k+1]) в код не включено.',
+      code:HEAD.concat([
+        L('void a2(int L, int R) {', 'sig'),
+        L('    double wes = 0, sum = 0;', 'wes'),
+        L('    if (L <= R) {', 'sig'),
+        L('        for (int i = L; i <= R; i++) wes += Wt[i];       /* вес отрезка */', 'wes'),
+        L('        int k = L;', 'find'),
+        L('        for (int i = L; i <= R; i++) {', 'find'),
+        L('            if (sum < wes / 2 && sum + Wt[i] >= wes / 2) { k = i; break; }', 'find'),
+        L('            sum += Wt[i];', 'find'),
+        L('        }', 'find'),
+        L('        add(&root, V[k]);                                /* центр тяжести — в корень */', 'add'),
+        L('        a2(L, k - 1);', 'rec'),
+        L('        a2(k + 1, R);', 'rec'),
+        L('    }', 'sig'),
+        L('}', 'sig')
+      ])
+    }
+  };
+  const pocket = S.mountPocket({key:'optApproxCodeOpen', title:CODES.a1.title, desc:CODES.a1.desc, foot:CODES.a1.foot, code:CODES.a1.code});
+  function codeTags(st, m){
+    const t = st.title || '';
+    if(m === 'a1') return /^Алгоритм A1/.test(t) ? ['sort'] : /^Добавить/.test(t) ? ['loop', 'add'] : [];
+    return /^Алгоритм A2/.test(t) ? ['sig'] : /^A2\(/.test(t) ? ['sig', 'wes', 'find', 'add', 'rec'] : [];
+  }
   let keys = [], w = [], weightMap = {}, rank = {}, total = 0, seq = 0;
   let results = null, mode = 'a1';
   const mk = d => ({id:++seq, d, l:null, r:null});
@@ -88,7 +142,8 @@
       const host = canvas.querySelector('.tree-host');
       if(step.tree) S.renderBinary(host, step, {showBal:false, weightMap});
       else host.innerHTML = '';
-    }
+    },
+    onStep(step){ pocket.show(step.code || []); }
   });
 
   function readInput(){
@@ -263,7 +318,10 @@
     mode = next;
     document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
     $('refineBox').style.display = mode === 'a2' ? 'flex' : 'none';
-    if(results) player.setSteps(results[mode].steps);
+    if(results){
+      pocket.setCode(CODES[mode].code, {title:CODES[mode].title, desc:CODES[mode].desc, foot:CODES[mode].foot});
+      player.setSteps(results[mode].steps);
+    }
   }
 
   function build(){
@@ -287,6 +345,8 @@
     const a1 = makeA1();
     const a2 = makeA2($('refine').checked);
     results = {a1, a2};
+    a1.steps.forEach(st => { st.code = codeTags(st, 'a1'); });
+    a2.steps.forEach(st => { st.code = codeTags(st, 'a2'); });
     renderCompare(exact, a1, a2);
     showMode(mode);
   }
