@@ -63,7 +63,8 @@
   </nav>
 </main>
 <script src="assets/core.js?v=4"></script>
-<script src="assets/quiz.js?v=5"></script>
+<script src="assets/stats.js?v=1"></script>
+<script src="assets/quiz.js?v=6"></script>
 <script>
 (function(){
   'use strict';
@@ -154,7 +155,7 @@
 
     steps.push({
       title:'Исходные данные',
-      text:`Вершины V<sub>1</sub>, …, V<sub>${n}</sub> упорядочены по ключам: ${keys.map((k, i) => `V<sub>${i + 1}</sub> = «${S.esc(k)}» (W<sub>${i + 1}</sub> = ${w[i]})`).join(', ')}; общий вес W = ${total}.<span class="l">T<sub>ij</sub> — оптимальное поддерево из вершин V<sub>i+1</sub>…V<sub>j</sub>, W<sub>ij</sub> — его вес, P<sub>ij</sub> — взвешенная высота (сумма вес · (глубина + 1)). Для любого дерева P = P<sub>L</sub> + W + P<sub>R</sub>.</span>`,
+      text:`Вершины V<sub>1</sub>, …, V<sub>${n}</sub> упорядочены по ключам: ${keys.map((k, i) => `V<sub>${i + 1}</sub> = «${S.esc(k)}» (W<sub>${i + 1}</sub> = ${w[i]})`).join(', ')}; общий вес W = ${total}.<span class="l">T<sub>ij</sub> — оптимальное поддерево из вершин V<sub>i+1</sub>…V<sub>j</sub>, W<sub>ij</sub> — его вес, P<sub>ij</sub> — взвешенная высота (сумма вес · уровень вершины). Уровень h<sub>j</sub> — число сравнений при поиске вершины, корень стоит на уровне 1. Для любого дерева P = P<sub>L</sub> + W + P<sub>R</sub>.</span>`,
       strip:S.strip(items),
       tree:null,
       dp:snap()
@@ -243,7 +244,7 @@
     const realCost = nz(S.weightedCost(root, weightMap));
     steps.push({
       title:'Готово: оптимальное дерево построено',
-      text:`Сумма W<sub>j</sub> · (глубина + 1) по построенному дереву равна <b>${realCost}</b> и совпадает с P<sub>0,${n}</sub> = ${Pm[0][n]}. Высота H = <b>${S.height(root)}</b>, средняя глубина <b>${S.avgDepth(root).toFixed(2)}</b>.<span class="l">Для заданных весов ни одно другое двоичное дерево поиска не даёт меньшей взвешенной высоты.</span>`,
+      text:`Сумма W<sub>j</sub>·h<sub>j</sub> по построенному дереву (h<sub>j</sub> — уровень вершины, корень на уровне 1) равна <b>${realCost}</b> и совпадает с P<sub>0,${n}</sub> = ${Pm[0][n]}. Вес дерева W = <b>${total}</b>, средневзвешенная высота h<sub>срв</sub> = P / W = ${realCost} / ${total} = <b>${total > 0 ? (realCost / total).toFixed(2) : '—'}</b>. Высота дерева H = <b>${S.height(root)}</b>.<span class="l">h<sub>срв</sub> — среднее число сравнений при поиске с учётом частот. Для заданных весов ни одно другое двоичное дерево поиска не даёт меньшей взвешенной высоты.</span>`,
       strip:S.strip(items, {done:items.map((_, i) => i)}),
       tree:S.clone(root),
       dp:snap({curM:'R', hot:[]})
