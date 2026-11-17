@@ -801,3 +801,8 @@ input[type=checkbox]:focus-visible{outline:2px solid var(--acsoft);outline-offse
 /* кодирование: панель метрик остаётся видна, когда открыт код */
 body.pocket-open .sort-layout.keep-meter{grid-template-columns:minmax(0,1fr)}
 body.pocket-open .sort-layout.keep-meter .meter-box{display:block;position:static;order:-1}
+
+/* QuickSort: строки с указателями */
+.qstack{display:grid;justify-items:center;gap:2px;margin:4px 0}
+.qr{line-height:0;max-width:100%}
+.qcap{text-align:center;font-size:13px;color:var(--mut);margin:2px 0 6px}
