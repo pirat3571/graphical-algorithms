@@ -120,9 +120,22 @@
 :root[data-theme="amoled"] .tab.on:hover{color:#000}
 /* Ссылки и кнопка «назад» в AMOLED — белые, не синие */
 :root[data-theme="amoled"] main a:not(.tile),
-:root[data-theme="amoled"] .topbar .back{color:#e8ebf2}
+:root[data-theme="amoled"] .topbar .back,
+:root[data-theme="amoled"] .topbar .crumb{color:#f4f6fa}
 :root[data-theme="amoled"] main a:not(.tile):hover,
 :root[data-theme="amoled"] .topbar .back:hover{color:#fff}
+
+/* Тёмная тема: ссылки и подпись возврата — светлые */
+:root[data-theme="dark"] main a:not(.tile),
+:root[data-theme="dark"] .topbar .back,
+:root[data-theme="dark"] .topbar .crumb{color:#e4e7eb}
+:root[data-theme="dark"] .topbar .back:hover{color:#fff;border-color:rgba(255,255,255,.55)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]):not([data-theme="amoled"]) main a:not(.tile),
+  :root:not([data-theme="light"]):not([data-theme="amoled"]) .topbar .back,
+  :root:not([data-theme="light"]):not([data-theme="amoled"]) .topbar .crumb{color:#e4e7eb}
+  :root:not([data-theme="light"]):not([data-theme="amoled"]) .topbar .back:hover{color:#fff;border-color:rgba(255,255,255,.55)}
+}
 @media (hover:hover) and (pointer:fine){
 :root[data-theme="amoled"] .card::after,
 :root[data-theme="amoled"] details::after,

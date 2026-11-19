@@ -41,10 +41,7 @@
     <button type="button" class="tab" data-algo="radix">DigitalSort</button>
   </div>
 
-  <div class="row tabs wrap" id="quickVer" style="display:none" role="tablist" aria-label="Версия QuickSort">
-    <button type="button" class="tab on" data-ver="1">Версия 1: две рекурсии</button>
-    <button type="button" class="tab" data-ver="2">Версия 2: рекурсия на меньшей части</button>
-  </div>
+  <div class="row tabs wrap" id="verTabs" style="display:none" role="tablist" aria-label="Версия алгоритма"></div>
 
   <section class="card" id="algoInfo"></section>
 
@@ -127,7 +124,7 @@
 <script src="assets/stats.js?v=1"></script>
 <script src="assets/algo.js?v=4"></script>
 <script src="assets/pocket.js?v=4"></script>
-<script src="assets/quiz.js?v=7"></script>
+<script src="assets/quiz.js?v=8"></script>
 <script>
 (function(){
   'use strict';
@@ -136,13 +133,13 @@
   const MAX = 16;
   let curAlgo = 'select';
   let steps = [], arr = [], C = 0, M = 0, seenC = 0, seenM = 0;
-  const CODES = {"select":{"name":"SelectSort","code":[["void selectsortenchanced(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t = 0;", ""], ["    for (int i = 0; i<n-1; i++){", "loop"], ["        int min = i;", "loop"], ["", ""], ["        for (int j = 1 + i; j<n; j++) {", "loop"], ["            c+=1;", "cmp"], ["", ""], ["            if (a[j] < a[min]){", "cmp"], ["                min = j;", "newmin"], ["            }", ""], ["        }", ""], ["        if (min != i) {", "swap"], ["            t = a[i];", "swap"], ["            m+=1;", "swap"], ["            a[i] = a[min];", "swap"], ["            m+=1;", "swap"], ["            a[min] = t;", "swap"], ["            m+=1;", "swap"], ["        }", ""], ["    }", ""], ["}", ""]]},"bubble":{"name":"BubbleSort","code":[["void bubblesort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t = 0;", ""], ["    for (int i = 0; i<n-1; i++){", "loop"], ["", ""], ["        for (int j = n - 1; j > i; j--) {", "loop"], ["            c+=1;", "cmp"], ["", ""], ["            if (a[j] < a[j-1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j - 1];", "swap"], ["                m+=1;", "swap"], ["                a[j-1] = t;", "swap"], ["                m+=1;", "swap"], ["            }", ""], ["        }", ""], ["    }", ""], ["}", ""]]},"shaker":{"name":"ShakerSort","code":[["void shakersort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int l = 0;", ""], ["    int r = n - 1;", ""], ["    int k = n;", ""], ["    int t;", ""], ["    while (l < r){", "loop"], ["        for (int j = r; j>l; j--) {", "loop"], ["            c+=1;", "cmp"], ["            if (a[j] < a[j-1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j-1];", "swap"], ["                m+=1;", "swap"], ["                a[j-1] = t;", "swap"], ["                m+=1;", "swap"], ["                k=j;", "swap"], ["            }", ""], ["        }", ""], ["        l=k;", "bound"], ["        for (int j = l; j<r; j++) {", "loop"], ["            c+=1;", "cmp"], ["            if (a[j] > a[j+1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j+1];", "swap"], ["                m+=1;", "swap"], ["                a[j+1] = t;", "swap"], ["                m+=1;", "swap"], ["                k=j;", "swap"], ["            }", ""], ["        }", ""], ["        r=k;", "bound"], ["    }", ""], ["}", ""]]},"insert":{"name":"InsertSort","code":[["void insertsort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t;", ""], ["    for (int i = 1; i<n; i++){", "loop"], ["        t = a[i];", "take"], ["        int j = i-1;", "take"], ["        while (j>=0) {", "loop"], ["            c++;", "cmp"], ["            if (t<a[j]){", "cmp"], ["                a[j+1] = a[j];", "shift"], ["                m+=1;", "shift"], ["                j--;", "shift"], ["            }", ""], ["            else break;", "cmp"], ["            a[j+1] = t;", "put"], ["        }", ""], ["    }", ""], ["}", ""]]},"shell":{"name":"ShellSort","code":[["void shellsort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t;", ""], ["    int s = 1;", "gap"], ["    while (s<n/2) {", "gap"], ["        s=s*2+1;", "gap"], ["    }", ""], ["    for (; s > 0; s=(s-1)/2){", "gap"], ["", ""], ["        for (int i = s; i < n; i++) {", "loop"], ["            t = a[i];", "take"], ["            m+=1;", ""], ["            int j = i-s;", "take"], ["            while (j>=0) {", ""], ["                c++;", "cmp"], ["                if (t<a[j]){", "cmp"], ["                    a[j+s] = a[j];", "shift"], ["                    m+=1;", ""], ["                    j-=s;", "shift"], ["                }", ""], ["                else break;", "cmp"], ["", ""], ["            }", ""], ["            a[j+s] = t;", "put"], ["            m++;", ""], ["        }", ""], ["    }", ""], ["}", ""]]},"heap":{"name":"HeapSort","code":[["void swap(int *x, int *y) {", ""], ["    int t = *x;", ""], ["    *x = *y;", ""], ["    *y = t;", ""], ["}", ""], ["", ""], ["void pyramid(int a[], int L, int R) {", "sig"], ["    int x = a[L - 1];", "x"], ["    int i = L, j;", "x"], ["    while (1) {", "loop"], ["        j = 2 * i;", "kid"], ["        if (j > R) break;", "kid"], ["        if (j < R && a[j] <= a[j - 1]) j++;", "kid"], ["        if (x <= a[j - 1]) break;", "cmp"], ["        a[i - 1] = a[j - 1];", "move"], ["        i = j;", "move"], ["    }", ""], ["    a[i - 1] = x;", "place"], ["}", ""], ["", ""], ["void heapsort(int a[], int n) {", ""], ["    for (int L = n / 2; L > 0; L--)", "stage1"], ["    pyramid(a, L, n);", "stage1"], ["    for (int R = n; R > 1; R--) {", "stage2"], ["        swap(&a[0], &a[R - 1]);", "swap"], ["        pyramid(a, 1, R - 1);", "stage2"], ["    }", ""], ["}", ""]]},"quick":{"name":"QuickSort","foot":"<b>L, R</b> — границы рабочей части массива, <b>pivot</b> — опорный элемент a[L], <b>i</b> и <b>j</b> — указатели навстречу друг другу. Вызов: <b>quicksort(a, 0, n - 1)</b>.","code":[["void swap(int *x, int *y) {",""],["    int t = *x;",""],["    *x = *y;",""],["    *y = t;",""],["}",""],["",""],["void quicksort(int a[], int L, int R) {",""],["    int pivot = a[L];","part"],["    int i = L, j = R;","part"],["    while (i <= j) {","loop"],["        while (a[i] < pivot) i++;","scani"],["        while (a[j] > pivot) j--;","scanj"],["        if (i <= j) {","swap"],["            swap(&a[i], &a[j]);","swap"],["            i++; j--;","swap"],["        }","swap"],["    }","loop"],["    if (L < j) quicksort(a, L, j);","recL"],["    if (i < R) quicksort(a, i, R);","recR"],["}",""]]},"quick2":{"name":"QuickSort, версия 2","foot":"<b>L, R</b> — границы рабочей части, <b>pivot</b> — опорный элемент a[L], <b>i</b> и <b>j</b> — указатели. Рекурсивно сортируется меньшая часть, а большая обрабатывается в цикле, поэтому глубина рекурсии не больше log₂ n.","code":[["void swap(int *x, int *y) {",""],["    int t = *x;",""],["    *x = *y;",""],["    *y = t;",""],["}",""],["",""],["void quicksort(int a[], int L, int R) {",""],["    while (L < R) {","loopv"],["        int pivot = a[L];","part"],["        int i = L, j = R;","part"],["        while (i <= j) {","loop"],["            while (a[i] < pivot) i++;","scani"],["            while (a[j] > pivot) j--;","scanj"],["            if (i <= j) {","swap"],["                swap(&a[i], &a[j]);","swap"],["                i++; j--;","swap"],["            }","swap"],["        }","loop"],["        if (j - L < R - i) {","choose"],["            quicksort(a, L, j);","recL"],["            L = i;","recL"],["        } else {","choose"],["            quicksort(a, i, R);","recR"],["            R = j;","recR"],["        }","choose"],["    }","loopv"],["}",""]]},"merge":{"name":"MergeSort","foot":"<b>n</b> — число элементов в списке S; <b>a, b</b> — рабочие списки; <b>c = (c<sub>0</sub>, c<sub>1</sub>)</b> — массив из двух очередей; <b>p</b> — предполагаемый размер серии; <b>q</b>, <b>r</b> — фактические размеры серий в a и b; <b>m</b> — текущее количество элементов в a и b; <b>i</b> — номер активной очереди.","code":[["struct node {", ""], ["    int data;", ""], ["    struct node *next;", ""], ["};", ""], ["", ""], ["struct queue {", ""], ["    struct node *Head, *Tail;", ""], ["};", ""], ["", ""], ["int split(struct node *S, struct node **a, struct node **b) {", "split"], ["    int n = 1;", "split"], ["    struct node *k, *p;", "split"], ["    *a = S;", "split"], ["    *b = S->next;", "split"], ["    k = *a;", "split"], ["    p = *b;", "split"], ["    while (p != NULL) {", "split"], ["        n++;", "split"], ["        k->next = p->next;", "split"], ["        k = p;", "split"], ["        p = p->next;", "split"], ["    }", "split"], ["    return n;", "split"], ["}", "split"], ["", ""], ["void move(struct node **list, struct queue *c) {", "mv"], ["    struct node *x = *list;", "mv"], ["    *list = x->next;", "mv"], ["    if (c->Tail == NULL) c->Head = x;", "mv"], ["    else c->Tail->next = x;", "mv"], ["    c->Tail = x;", "mv"], ["}", "mv"], ["", ""], ["void merge(struct node **a, int q, struct node **b, int r, struct queue *c) {", ""], ["    while (q != 0 && r != 0) {", "cmp"], ["        if ((*a)->data <= (*b)->data) {", "cmp"], ["            move(a, c);", "cmp"], ["            q--;", "cmp"], ["        } else {", "cmp"], ["            move(b, c);", "cmp"], ["            r--;", "cmp"], ["        }", "cmp"], ["    }", "cmp"], ["    while (q > 0) {", "resta"], ["        move(a, c);", "resta"], ["        q--;", "resta"], ["    }", "resta"], ["    while (r > 0) {", "restb"], ["        move(b, c);", "restb"], ["        r--;", "restb"], ["    }", "restb"], ["}", ""], ["", ""], ["struct node *mergesort(struct node *S) {", "sig"], ["    if (S == NULL || S->next == NULL) return S;", ""], ["    struct node *a, *b;", ""], ["    struct queue c[2];", ""], ["    int n = split(S, &a, &b);", "split"], ["    int p = 1;", ""], ["    while (p < n) {", "pass"], ["        int i = 0, m = n, q, r;", "pass"], ["        c[0].Head = c[0].Tail = NULL;", "pass"], ["        c[1].Head = c[1].Tail = NULL;", "pass"], ["        while (m > 0) {", "pass"], ["            if (m >= p) q = p; else q = m;", "pass"], ["            m = m - q;", "pass"], ["            if (m >= p) r = p; else r = m;", "pass"], ["            m = m - r;", "pass"], ["            merge(&a, q, &b, r, &c[i]);", "pass"], ["            i = 1 - i;", "pass"], ["        }", ""], ["        a = c[0].Head;", "swapq"], ["        b = c[1].Head;", "swapq"], ["        p = 2 * p;", "swapq"], ["    }", ""], ["    c[0].Tail->next = NULL;", "done"], ["    return c[0].Head;", "done"], ["}", ""]]},"radix":{"name":"DigitalSort","code":[["void digitalsort(int a[], int n) {", ""], ["    int max = a[0];", "max"], ["    for (int i = 1; i < n; i++)", ""], ["    if (a[i] > max) max = a[i];", "max"], ["    int bucket[10][n];", "pass"], ["    int cnt[10];", "pass"], ["    for (int exp = 1; max / exp > 0; exp *= 10) {", "pass"], ["        for (int d = 0; d < 10; d++) cnt[d] = 0;", "pass"], ["        for (int i = 0; i < n; i++) {", ""], ["            int d = a[i] / exp % 10;", "put"], ["            bucket[d][cnt[d]++] = a[i];", "put"], ["        }", ""], ["        int k = 0;", "collect"], ["        for (int d = 0; d < 10; d++)", "collect"], ["        for (int j = 0; j < cnt[d]; j++)", "collect"], ["        a[k++] = bucket[d][j];", "collect"], ["    }", ""], ["}", ""]]}};
+  const CODES = {"select":{"name":"SelectSort","foot":"<b>k</b> — номер минимального элемента неотсортированной части, <b>i</b> — начало этой части, <b>c</b> и <b>m</b> — счётчики сравнений и перемещений. Обмен a[i] ↔ a[k] выполняется на каждом проходе.","code":[["void selectsort(int a[], int n){",""],["    int c = 0;",""],["    int m = 0;",""],["    int t = 0;",""],["    for (int i = 0; i<n-1; i++){","loop"],["        int k = i;","init"],["",""],["        for (int j = 1 + i; j<n; j++) {","loop"],["            c+=1;","cmp"],["",""],["            if (a[j] < a[k]){","cmp"],["                k = j;","newk"],["            }",""],["        }",""],["        t = a[i];","swap"],["        m+=1;","swap"],["        a[i] = a[k];","swap"],["        m+=1;","swap"],["        a[k] = t;","swap"],["        m+=1;","swap"],["    }",""],["}",""]]},"select2":{"name":"SelectSort, версия 2","foot":"<b>k</b> — номер минимального элемента, <b>c</b> и <b>m</b> — счётчики. Улучшенная версия: обмен только при <b>k != i</b>, лишние перестановки элемента с самим собой пропускаются.","code":[["void selectsort(int a[], int n){",""],["    int c = 0;",""],["    int m = 0;",""],["    int t = 0;",""],["    for (int i = 0; i<n-1; i++){","loop"],["        int k = i;","init"],["",""],["        for (int j = 1 + i; j<n; j++) {","loop"],["            c+=1;","cmp"],["",""],["            if (a[j] < a[k]){","cmp"],["                k = j;","newk"],["            }",""],["        }",""],["        if (k != i) {","chk"],["            t = a[i];","swap"],["            m+=1;","swap"],["            a[i] = a[k];","swap"],["            m+=1;","swap"],["            a[k] = t;","swap"],["            m+=1;","swap"],["        }","chk"],["    }",""],["}",""]]},"bubble":{"name":"BubbleSort","code":[["void bubblesort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t = 0;", ""], ["    for (int i = 0; i<n-1; i++){", "loop"], ["", ""], ["        for (int j = n - 1; j > i; j--) {", "loop"], ["            c+=1;", "cmp"], ["", ""], ["            if (a[j] < a[j-1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j - 1];", "swap"], ["                m+=1;", "swap"], ["                a[j-1] = t;", "swap"], ["                m+=1;", "swap"], ["            }", ""], ["        }", ""], ["    }", ""], ["}", ""]]},"shaker":{"name":"ShakerSort","code":[["void shakersort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int l = 0;", ""], ["    int r = n - 1;", ""], ["    int k = n;", ""], ["    int t;", ""], ["    while (l < r){", "loop"], ["        for (int j = r; j>l; j--) {", "loop"], ["            c+=1;", "cmp"], ["            if (a[j] < a[j-1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j-1];", "swap"], ["                m+=1;", "swap"], ["                a[j-1] = t;", "swap"], ["                m+=1;", "swap"], ["                k=j;", "swap"], ["            }", ""], ["        }", ""], ["        l=k;", "bound"], ["        for (int j = l; j<r; j++) {", "loop"], ["            c+=1;", "cmp"], ["            if (a[j] > a[j+1]){", "cmp"], ["                t = a[j];", "swap"], ["                m+=1;", "swap"], ["                a[j] = a[j+1];", "swap"], ["                m+=1;", "swap"], ["                a[j+1] = t;", "swap"], ["                m+=1;", "swap"], ["                k=j;", "swap"], ["            }", ""], ["        }", ""], ["        r=k;", "bound"], ["    }", ""], ["}", ""]]},"insert":{"name":"InsertSort","code":[["void insertsort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t;", ""], ["    for (int i = 1; i<n; i++){", "loop"], ["        t = a[i];", "take"], ["        int j = i-1;", "take"], ["        while (j>=0) {", "loop"], ["            c++;", "cmp"], ["            if (t<a[j]){", "cmp"], ["                a[j+1] = a[j];", "shift"], ["                m+=1;", "shift"], ["                j--;", "shift"], ["            }", ""], ["            else break;", "cmp"], ["            a[j+1] = t;", "put"], ["        }", ""], ["    }", ""], ["}", ""]]},"shell":{"name":"ShellSort","code":[["void shellsort(int a[], int n){", ""], ["    int c = 0;", ""], ["    int m = 0;", ""], ["    int t;", ""], ["    int s = 1;", "gap"], ["    while (s<n/2) {", "gap"], ["        s=s*2+1;", "gap"], ["    }", ""], ["    for (; s > 0; s=(s-1)/2){", "gap"], ["", ""], ["        for (int i = s; i < n; i++) {", "loop"], ["            t = a[i];", "take"], ["            m+=1;", ""], ["            int j = i-s;", "take"], ["            while (j>=0) {", ""], ["                c++;", "cmp"], ["                if (t<a[j]){", "cmp"], ["                    a[j+s] = a[j];", "shift"], ["                    m+=1;", ""], ["                    j-=s;", "shift"], ["                }", ""], ["                else break;", "cmp"], ["", ""], ["            }", ""], ["            a[j+s] = t;", "put"], ["            m++;", ""], ["        }", ""], ["    }", ""], ["}", ""]]},"heap":{"name":"HeapSort","code":[["void swap(int *x, int *y) {", ""], ["    int t = *x;", ""], ["    *x = *y;", ""], ["    *y = t;", ""], ["}", ""], ["", ""], ["void pyramid(int a[], int L, int R) {", "sig"], ["    int x = a[L - 1];", "x"], ["    int i = L, j;", "x"], ["    while (1) {", "loop"], ["        j = 2 * i;", "kid"], ["        if (j > R) break;", "kid"], ["        if (j < R && a[j] <= a[j - 1]) j++;", "kid"], ["        if (x <= a[j - 1]) break;", "cmp"], ["        a[i - 1] = a[j - 1];", "move"], ["        i = j;", "move"], ["    }", ""], ["    a[i - 1] = x;", "place"], ["}", ""], ["", ""], ["void heapsort(int a[], int n) {", ""], ["    for (int L = n / 2; L > 0; L--)", "stage1"], ["    pyramid(a, L, n);", "stage1"], ["    for (int R = n; R > 1; R--) {", "stage2"], ["        swap(&a[0], &a[R - 1]);", "swap"], ["        pyramid(a, 1, R - 1);", "stage2"], ["    }", ""], ["}", ""]]},"quick":{"name":"QuickSort","foot":"<b>L, R</b> — границы рабочей части массива, <b>pivot</b> — опорный элемент a[L], <b>i</b> и <b>j</b> — указатели навстречу друг другу. Вызов: <b>quicksort(a, 0, n - 1)</b>.","code":[["void swap(int *x, int *y) {",""],["    int t = *x;",""],["    *x = *y;",""],["    *y = t;",""],["}",""],["",""],["void quicksort(int a[], int L, int R) {",""],["    int pivot = a[L];","part"],["    int i = L, j = R;","part"],["    while (i <= j) {","loop"],["        while (a[i] < pivot) i++;","scani"],["        while (a[j] > pivot) j--;","scanj"],["        if (i <= j) {","swap"],["            swap(&a[i], &a[j]);","swap"],["            i++; j--;","swap"],["        }","swap"],["    }","loop"],["    if (L < j) quicksort(a, L, j);","recL"],["    if (i < R) quicksort(a, i, R);","recR"],["}",""]]},"quick2":{"name":"QuickSort, версия 2","foot":"<b>L, R</b> — границы рабочей части, <b>pivot</b> — опорный элемент a[L], <b>i</b> и <b>j</b> — указатели. Рекурсивно сортируется меньшая часть, а большая обрабатывается в цикле, поэтому глубина рекурсии не больше log₂ n.","code":[["void swap(int *x, int *y) {",""],["    int t = *x;",""],["    *x = *y;",""],["    *y = t;",""],["}",""],["",""],["void quicksort(int a[], int L, int R) {",""],["    while (L < R) {","loopv"],["        int pivot = a[L];","part"],["        int i = L, j = R;","part"],["        while (i <= j) {","loop"],["            while (a[i] < pivot) i++;","scani"],["            while (a[j] > pivot) j--;","scanj"],["            if (i <= j) {","swap"],["                swap(&a[i], &a[j]);","swap"],["                i++; j--;","swap"],["            }","swap"],["        }","loop"],["        if (j - L < R - i) {","choose"],["            quicksort(a, L, j);","recL"],["            L = i;","recL"],["        } else {","choose"],["            quicksort(a, i, R);","recR"],["            R = j;","recR"],["        }","choose"],["    }","loopv"],["}",""]]},"merge":{"name":"MergeSort","foot":"<b>n</b> — число элементов в списке S; <b>a, b</b> — рабочие списки; <b>c = (c<sub>0</sub>, c<sub>1</sub>)</b> — массив из двух очередей; <b>p</b> — предполагаемый размер серии; <b>q</b>, <b>r</b> — фактические размеры серий в a и b; <b>m</b> — текущее количество элементов в a и b; <b>i</b> — номер активной очереди.","code":[["struct node {", ""], ["    int data;", ""], ["    struct node *next;", ""], ["};", ""], ["", ""], ["struct queue {", ""], ["    struct node *Head, *Tail;", ""], ["};", ""], ["", ""], ["int split(struct node *S, struct node **a, struct node **b) {", "split"], ["    int n = 1;", "split"], ["    struct node *k, *p;", "split"], ["    *a = S;", "split"], ["    *b = S->next;", "split"], ["    k = *a;", "split"], ["    p = *b;", "split"], ["    while (p != NULL) {", "split"], ["        n++;", "split"], ["        k->next = p->next;", "split"], ["        k = p;", "split"], ["        p = p->next;", "split"], ["    }", "split"], ["    return n;", "split"], ["}", "split"], ["", ""], ["void move(struct node **list, struct queue *c) {", "mv"], ["    struct node *x = *list;", "mv"], ["    *list = x->next;", "mv"], ["    if (c->Tail == NULL) c->Head = x;", "mv"], ["    else c->Tail->next = x;", "mv"], ["    c->Tail = x;", "mv"], ["}", "mv"], ["", ""], ["void merge(struct node **a, int q, struct node **b, int r, struct queue *c) {", ""], ["    while (q != 0 && r != 0) {", "cmp"], ["        if ((*a)->data <= (*b)->data) {", "cmp"], ["            move(a, c);", "cmp"], ["            q--;", "cmp"], ["        } else {", "cmp"], ["            move(b, c);", "cmp"], ["            r--;", "cmp"], ["        }", "cmp"], ["    }", "cmp"], ["    while (q > 0) {", "resta"], ["        move(a, c);", "resta"], ["        q--;", "resta"], ["    }", "resta"], ["    while (r > 0) {", "restb"], ["        move(b, c);", "restb"], ["        r--;", "restb"], ["    }", "restb"], ["}", ""], ["", ""], ["struct node *mergesort(struct node *S) {", "sig"], ["    if (S == NULL || S->next == NULL) return S;", ""], ["    struct node *a, *b;", ""], ["    struct queue c[2];", ""], ["    int n = split(S, &a, &b);", "split"], ["    int p = 1;", ""], ["    while (p < n) {", "pass"], ["        int i = 0, m = n, q, r;", "pass"], ["        c[0].Head = c[0].Tail = NULL;", "pass"], ["        c[1].Head = c[1].Tail = NULL;", "pass"], ["        while (m > 0) {", "pass"], ["            if (m >= p) q = p; else q = m;", "pass"], ["            m = m - q;", "pass"], ["            if (m >= p) r = p; else r = m;", "pass"], ["            m = m - r;", "pass"], ["            merge(&a, q, &b, r, &c[i]);", "pass"], ["            i = 1 - i;", "pass"], ["        }", ""], ["        a = c[0].Head;", "swapq"], ["        b = c[1].Head;", "swapq"], ["        p = 2 * p;", "swapq"], ["    }", ""], ["    c[0].Tail->next = NULL;", "done"], ["    return c[0].Head;", "done"], ["}", ""]]},"radix":{"name":"DigitalSort","code":[["void digitalsort(int a[], int n) {", ""], ["    int max = a[0];", "max"], ["    for (int i = 1; i < n; i++)", ""], ["    if (a[i] > max) max = a[i];", "max"], ["    int bucket[10][n];", "pass"], ["    int cnt[10];", "pass"], ["    for (int exp = 1; max / exp > 0; exp *= 10) {", "pass"], ["        for (int d = 0; d < 10; d++) cnt[d] = 0;", "pass"], ["        for (int i = 0; i < n; i++) {", ""], ["            int d = a[i] / exp % 10;", "put"], ["            bucket[d][cnt[d]++] = a[i];", "put"], ["        }", ""], ["        int k = 0;", "collect"], ["        for (int d = 0; d < 10; d++)", "collect"], ["        for (int j = 0; j < cnt[d]; j++)", "collect"], ["        a[k++] = bucket[d][j];", "collect"], ["    }", ""], ["}", ""]]}};
   const pocket = S.mountPocket({key:'sortCodeOpen', title:'Код на C', code:CODES.select.code});
   /* подписи над столбиками: L({i, j}) -> {индекс: 'i', ...}; совпавшие имена склеиваются */
   function L(o){ const t = {}; for(const k in o){ const p = o[k]; if(p === undefined || p < 0) continue; t[p] = t[p] ? t[p] + ', ' + k : k; } return t; }
   const T = {
-    select(s){ const t = s.title || ''; if(s.cmp) return ['cmp']; if(/^Новый минимум/.test(t)) return ['newmin']; if(/^Обмен|^Минимум уже/.test(t)) return ['swap']; return ['loop']; },
-    bubble(s){ if(s.cmp) return ['cmp']; if(s.move) return ['swap']; return ['loop']; },
+    select(s){ return s.hc || []; },
+    bubble(s){ return s.hc || []; },
     shaker(s){ if(s.cmp) return ['cmp']; if(s.move) return ['swap']; if(/^[lr] = k/.test(s.title || '')) return ['bound']; return ['loop']; },
     insert(s){ const t = s.title || ''; if(s.cmp) return ['cmp']; if(/^Берём/.test(t)) return ['take']; if(/^Сдвиг/.test(t)) return ['shift']; if(/вставлен в/.test(t)) return ['put']; return ['loop']; },
     shell(s){ const t = s.title || ''; if(s.cmp) return ['cmp']; if(/\(i = /.test(t)) return ['take']; if(/^Сдвиг/.test(t)) return ['shift']; if(/на месте/.test(t)) return ['put']; if(/^Начальный шаг|^Шаг s/.test(t)) return ['gap']; return ['loop']; },
@@ -159,7 +156,7 @@
 
   const ALGOS = {
     select: {
-      name:'SelectSort', ru:'Сортировка выбором', idea:'На каждом проходе находим минимальный элемент в неотсортированной части и меняем его с первым элементом этой части.',
+      name:'SelectSort', ru:'Сортировка выбором', idea:'На каждом проходе находим номер k минимального элемента в неотсортированной части и меняем a[i] с a[k]. В обычной версии обмен выполняется всегда, в улучшенной — только если k ≠ i.',
       best:'O(n²)', avg:'O(n²)', worst:'O(n²)', mem:'O(1)', stable:'нет', moves:'≈ n обменов',
       run: runSelect
     },
@@ -255,50 +252,89 @@
     rec('Готово: массив отсортирован', `Итог: <b>${a.map(S.esc).join(' ')}</b>. Всего сравнений <b>C = ${C}</b>, перемещений <b>M = ${M}</b>.<span class="l">Проверьте: каждый следующий символ не меньше предыдущего. Счётчики накоплены за весь прогон алгоритма.</span>`, {done, caption:'Отсортировано'});
   }
 
+  /* Строки в стиле слайдов: подчёркивание, точки над i и k, палочка после готовой части, стрелка обмена */
+  let sVer = 1;
+  function lineSVG(arr, o){
+    const n = arr.length, CW = 38;
+    const X = k => (k + 1) * CW + CW / 2;
+    const W = (n + 2) * CW, H = o.arrow ? 78 : 56;
+    const dn = k => o.done && o.done.has(k);
+    let g = '<defs><marker id="qa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L9 5L1 9" fill="none" stroke="var(--tx)" stroke-width="1.5"/></marker></defs>';
+    for(let k = 0; k < n; k++){
+      if(o.only && o.only.indexOf(k) < 0) continue;
+      g += `<text x="${X(k)}" y="34" text-anchor="middle" font-size="22" font-weight="600" fill="${dn(k) ? 'var(--ok)' : 'var(--tx)'}">${S.esc(arr[k])}</text>`;
+    }
+    (o.under || []).forEach(k => { g += `<line x1="${X(k) - 11}" y1="42" x2="${X(k) + 11}" y2="42" stroke="var(--tx)" stroke-width="1.6"/>`; });
+    if(o.span) g += `<line x1="${X(o.span[0]) - 12}" y1="42" x2="${X(o.span[1]) + 12}" y2="42" stroke="var(--tx)" stroke-width="1.6"/>`;
+    (o.dots || []).forEach(k => { g += `<circle cx="${X(k)}" cy="7" r="3" fill="var(--tx)"/>`; });
+    (o.over || []).forEach(k => { g += `<line x1="${X(k) - 10}" y1="11" x2="${X(k) + 10}" y2="11" stroke="var(--ac)" stroke-width="2.6"/><text x="${X(k) + 13}" y="14" font-size="10" fill="var(--ac)">j</text>`; });
+    if(o.bar) g += `<line x1="${X(o.bar - 1) + CW / 2}" y1="4" x2="${X(o.bar - 1) + CW / 2}" y2="50" stroke="var(--tx)" stroke-width="2.6"/>`;
+    if(o.arrow){
+      const p = o.arrow[0], q = o.arrow[1], same = p === q;
+      g += `<path d="M${same ? X(p) - 5 : X(p)} 48V66H${same ? X(p) + 5 : X(q)}V48" fill="none" stroke="var(--tx)" stroke-width="1.4" marker-start="url(#qa)" marker-end="url(#qa)"/>`;
+    }
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;margin:0 auto" role="img">${g}</svg>`;
+  }
+  const qrow = svg => `<div class="qr">${svg}</div>`;
+  const range = (x, y) => { const r = []; for(let k = x; k <= y; k++) r.push(k); return r; };
+
   function runSelect(a){
-    const n = a.length, done = [];
+    const n = a.length, v2 = sVer === 2, done = new Set(), hist = [];
+    const stack = live => `<div class="qstack">${hist.join('')}${qrow(live)}</div>`;
     for(let i = 0; i < n - 1; i++){
-      let min = i;
-      rec(`Проход ${i + 1}: ищем минимум`, `Просматриваем позиции <b>${i}…${n - 1}</b>. Пока минимум — «<b>${S.esc(a[i])}</b>» в позиции ${i}.`, {done, tags:L({i})});
+      let k = i;
+      const live = o => lineSVG(a, Object.assign({bar:i, done:new Set(done), under:range(i, n - 1), dots:k === i ? [i] : [i, k]}, o || {}));
+      rec(`Проход ${i + 1}: ищем минимум`, `Просматриваем позиции <b>${i}…${n - 1}</b>. Пока k := i = ${i}, то есть минимум — «<b>${S.esc(a[i])}</b>».<span class="l">Подчёркнута неотсортированная часть, палочка отделяет готовую. Точки над i и над k (позицией минимума), стрелка — обмен.</span>`,
+        {html:stack(live()), hc:['loop', 'init']});
       for(let j = i + 1; j < n; j++){
         C++;
-        rec(`Сравнение «${a[j]}» и «${a[min]}»`, `Сравниваем <b>${S.esc(a[j])}</b> (поз. ${j}) с текущим минимумом <b>${S.esc(a[min])}</b> (поз. ${min}).`, {cmp:[j, min], done, tags:L({i, j, min})});
-        if(S.code(a[j]) < S.code(a[min])){
-          min = j;
-          rec('Новый минимум', `«<b>${S.esc(a[j])}</b>» меньше — запоминаем позицию ${j} как новую позицию минимума.`, {cmp:[j], done, tags:L({i, j, min})});
-        }
+        const lt = S.code(a[j]) < S.code(a[k]);
+        const kk = k;
+        if(lt) k = j;
+        rec(`Сравнение «${a[j]}» и «${a[kk]}»`, `Сравниваем a[${j}] = «<b>${S.esc(a[j])}</b>» с a[k] = «<b>${S.esc(a[kk])}</b>» (k = ${kk}): ${lt ? `меньше, значит k := ${j}.` : 'не меньше, k не меняется.'}`,
+          {html:stack(live({over:[j]})), hc:lt ? ['loop', 'cmp', 'newk'] : ['loop', 'cmp']});
       }
-      if(min !== i){
-        const left = a[i], pick = a[min];
-        swap(a, i, min);
-        rec('Обмен с минимумом', `Меняем местами «<b>${S.esc(left)}</b>» (поз. ${i}) и «<b>${S.esc(pick)}</b>» (поз. ${min}). Обмен — 3 перемещения.`, {move:[i, min], done, tags:L({i, min})});
+      const x = a[i], y = a[k];
+      if(!v2 || k !== i){
+        hist.push(qrow(live({arrow:[i, k]})));
+        swap(a, i, k);
+        done.add(i);
+        rec(k === i ? `Обмен «${x}» с самим собой` : `Обмен a[${i}] ↔ a[${k}]`,
+          k === i ? `k = i: «<b>${S.esc(x)}</b>» уже минимальный. Обычная версия всё равно делает обмен — элемент меняется сам с собой (3 перемещения). В улучшенной версии такой обмен пропускается.`
+                  : `Меняем местами «<b>${S.esc(x)}</b>» (поз. ${i}) и «<b>${S.esc(y)}</b>» (поз. ${k}) — 3 перемещения. Позиция ${i} закреплена.`,
+          {html:stack(lineSVG(a, {bar:i + 1, done:new Set(done), under:range(i + 1, n - 1), dots:[i + 1]})), hc:v2 ? ['chk', 'swap'] : ['swap']});
       } else {
-        rec('Минимум уже на месте', `«<b>${S.esc(a[i])}</b>» и так стоит в позиции ${i} — обмен не нужен.`, {done, tags:L({i, min})});
+        hist.push(qrow(live()));
+        done.add(i);
+        rec('Минимум уже на месте', `k = i: «<b>${S.esc(x)}</b>» и так стоит в позиции ${i}, поэтому улучшенная версия обмен пропускает (0 перемещений). Позиция ${i} закреплена.`,
+          {html:stack(lineSVG(a, {bar:i + 1, done:new Set(done), under:range(i + 1, n - 1), dots:[i + 1]})), hc:['chk']});
       }
-      done.push(i);
-      rec(`Позиция ${i} закреплена`, `Элемент «<b>${S.esc(a[i])}</b>» стоит на своём окончательном месте. Неотсортированная часть начинается с ${i + 1}.`, {done:done.slice(), tags:{[i]:'готово'}});
     }
-    done.push(n - 1);
+    done.add(n - 1);
     finish(a);
   }
 
   function runBubble(a){
     const n = a.length;
     for(let i = 0; i < n - 1; i++){
-      const done = [];
-      for(let q = 0; q < i; q++) done.push(q);
-      rec(`Проход ${i + 1}: i = ${i}`, `Идём справа налево: j от ${n - 1} до ${i + 1}. В конце прохода минимум окажется в позиции <b>${i}</b>.`, {done:done.slice(), tags:L({i})});
+      const done = new Set(range(0, i - 1));
+      const rows = [qrow(lineSVG(a, {bar:i, done:new Set(done)}))];
+      const stack = () => `<div class="qstack">${rows.join('')}</div>`;
+      rec(`Проход ${i + 1}: i = ${i}`, `Идём справа налево: j от ${n - 1} до ${i + 1}. Сравниваем соседей a[j−1] и a[j]; если правый меньше, меняем их. В конце прохода минимум окажется в позиции <b>${i}</b>.<span class="l">Верхняя строка — массив в начале прохода, палочка отделяет готовую часть. Ниже по строке на каждую пару: подчёркнутая пара — был обмен.</span>`,
+        {html:stack(), hc:['loop']});
       for(let j = n - 1; j > i; j--){
         C++;
-        rec(`Сравнение «${a[j - 1]}» и «${a[j]}»`, `Сравниваем a[j−1] и a[j] при j = ${j}.`, {cmp:[j - 1, j], done:done.slice(), tags:L({i, 'j−1':j - 1, j})});
-        if(S.code(a[j]) < S.code(a[j - 1])){
-          const x = a[j - 1], y = a[j];
-          swap(a, j - 1, j);
-          rec('Обмен соседей', `«<b>${S.esc(y)}</b>» меньше «<b>${S.esc(x)}</b>» — меняем соседей местами. Меньший элемент движется влево.`, {move:[j - 1, j], done:done.slice(), tags:L({i, 'j−1':j - 1, j})});
-        }
+        const x = a[j - 1], y = a[j];
+        const sw = S.code(y) < S.code(x);
+        if(sw) swap(a, j - 1, j);
+        rows.push(qrow(lineSVG(a, {only:[j - 1, j], span:sw ? [j - 1, j] : null})));
+        rec(`Сравнение «${x}» и «${y}»`, sw ? `a[${j}] = «<b>${S.esc(y)}</b>» меньше a[${j - 1}] = «<b>${S.esc(x)}</b>» — меняем соседей местами (3 перемещения). Меньший элемент движется влево.`
+                                           : `a[${j}] = «<b>${S.esc(y)}</b>» не меньше a[${j - 1}] = «<b>${S.esc(x)}</b>» — обмена нет.`,
+          {html:stack(), hc:sw ? ['loop', 'cmp', 'swap'] : ['loop', 'cmp']});
       }
-      done.push(i);
-      rec(`Минимум прохода — в позиции ${i}`, `Элемент «<b>${S.esc(a[i])}</b>» занял окончательное место.`, {done:done.slice(), tags:L({i})});
+      done.add(i);
+      rows.push(qrow(lineSVG(a, {bar:i + 1, done:new Set(done)})));
+      rec(`Минимум прохода — в позиции ${i}`, `Элемент «<b>${S.esc(a[i])}</b>» занял окончательное место. Нижняя строка — массив после прохода, палочка сдвинулась на одну позицию.`, {html:stack(), hc:['loop']});
     }
     finish(a);
   }
@@ -825,7 +861,7 @@
     steps = [];
     const algo = ALGOS[curAlgo];
     $('algoInfo').innerHTML = infoHTML(algo);
-    const cd = curAlgo === 'quick' && qVer === 2 ? CODES.quick2 : CODES[curAlgo];
+    const cd = curAlgo === 'quick' && qVer === 2 ? CODES.quick2 : curAlgo === 'select' && sVer === 2 ? CODES.select2 : CODES[curAlgo];
     pocket.setCode(cd ? cd.code : null, cd ? {title:'Код на C: ' + cd.name, desc:'Подсвечены строки текущего шага. <code>c</code> и <code>m</code> — счётчики сравнений и перемещений.', foot:cd.foot || ''} : undefined);
     rec('Исходный массив', `Сортируем <b>${arr.length}</b> символов алгоритмом <b>${S.esc(algo.name)}</b>: <b>${arr.map(S.esc).join(' ')}</b>.<span class="l">${S.esc(algo.idea)}</span>`, {caption:'исходный порядок'});
     algo.run(arr);
@@ -839,16 +875,27 @@
     const b = e.target.closest('[data-algo]');
     if(!b) return;
     curAlgo = b.dataset.algo;
-    $('quickVer').style.display = curAlgo === 'quick' ? '' : 'none';
+    syncVer();
     mountQuiz();
     [...$('algoTabs').querySelectorAll('.tab')].forEach(x => x.classList.toggle('on', x === b));
     build();
   });
-  $('quickVer').addEventListener('click', e => {
+  const VERS = {
+    quick:[['1', 'Версия 1: две рекурсии'], ['2', 'Версия 2: рекурсия на меньшей части']],
+    select:[['1', 'Версия 1: обычная'], ['2', 'Версия 2: улучшенная (без лишних обменов)']]
+  };
+  function syncVer(){
+    const v = VERS[curAlgo], box = $('verTabs');
+    if(!v){ box.style.display = 'none'; return; }
+    const cur = curAlgo === 'quick' ? qVer : sVer;
+    box.innerHTML = v.map(x => `<button type="button" class="tab${+x[0] === cur ? ' on' : ''}" data-ver="${x[0]}">${x[1]}</button>`).join('');
+    box.style.display = '';
+  }
+  $('verTabs').addEventListener('click', e => {
     const b = e.target.closest('[data-ver]');
     if(!b) return;
-    qVer = +b.dataset.ver;
-    [...$('quickVer').querySelectorAll('.tab')].forEach(x => x.classList.toggle('on', x === b));
+    if(curAlgo === 'quick') qVer = +b.dataset.ver; else sVer = +b.dataset.ver;
+    syncVer();
     build();
   });
   function mountQuiz(){
@@ -866,6 +913,7 @@
   };
   $('inp').addEventListener('keydown', e => { if(e.key === 'Enter') build(); });
   $('inp').value = S.randLetters(8, {pool:'ABCDEFGHKLMNPRST'});
+  syncVer();
   mountQuiz();
   build();
 })();
