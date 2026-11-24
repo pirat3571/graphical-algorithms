@@ -20,8 +20,12 @@
   <section class="card">
     <div class="row">
       <div class="field">
-        <label for="inp">Набор символов</label>
-        <input id="inp" value="АБРАКАДАБРА" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Например: АБРАКАДАБРА">
+        <label for="inp">Исходный текст</label>
+        <input id="inp" value="АБРАКАДАБРА" maxlength="60" autocomplete="off" spellcheck="false" placeholder="Например: АБРАКАДАБРА">
+      </div>
+      <div class="field">
+        <label for="set">Символы для кодирования</label>
+        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="пусто — первые 10 различных">
       </div>
       <button class="p" id="go" type="button">Построить</button>
       <button id="ex" type="button">Пример</button>
@@ -42,7 +46,7 @@
         </select>
       </div>
     </div>
-    <div class="meta" style="margin-top:9px">До 40 символов, повторы разрешены (именно частота повтора задаёт вероятность). p<sub>i</sub> = n<sub>i</sub> / N с округлением до 0,01.</div>
+    <div class="meta" style="margin-top:9px">До 60 символов, пробелы и знаки-разделители не учитываются, буквы приводятся к заглавным. Символы для кодирования можно ввести вручную (любые из текста: первые, последние, случайные). Если поле пустое, берутся первые 10 различных символов текста. Вероятность каждого оценивается по частоте в исходном тексте: p<sub>i</sub> = n<sub>i</sub> / N, где N — число вхождений кодируемых символов. Округление до 0,01 с поправкой, чтобы сумма была ровно 1.</div>
   </section>
 
   <div class="row tabs wrap" id="codeTabs" role="tablist" aria-label="Метод кодирования">
@@ -73,7 +77,7 @@
 
   <details>
     <summary>Как оцениваются вероятности</summary>
-    <p>Вероятность символа оценивается по всей выборке: <code>p<sub>i</sub> = n<sub>i</sub> / N</code>, где n<sub>i</sub> — сколько раз символ встретился, N — длина набора. Значение округляется до двух знаков после запятой. Из-за округления сумма p<sub>i</sub> может немного отличаться от 1 — все дальнейшие расчёты (энтропия, длины, Крафт, L) ведутся именно по округлённым вероятностям.</p>
+    <p>Кодируются символы из поля «Символы для кодирования» (если оно пустое, то первые 10 различных символов исходного текста). Вероятность символа оценивается по частоте: <code>p<sub>i</sub> = n<sub>i</sub> / N</code>, где n<sub>i</sub> — сколько раз символ встретился в тексте, N — сумма n<sub>i</sub> по кодируемым символам (остальные символы текста не учитываются). Значение округляется до двух знаков после запятой. Если после округления сумма отличается от 1, разница по одной сотой добавляется к самым вероятным символам (или вычитается у них), поэтому сумма p<sub>i</sub> всегда равна 1. Все дальнейшие расчёты (энтропия, длины, Крафт, L) ведутся по этим округлённым вероятностям.</p>
   </details>
 
   <details>
@@ -709,12 +713,12 @@
     });
     steps.push({
       title:'Исходный набор',
-      text:`Набор: <b>${labeled.join(' ')}</b> — ${N} символов, из них различных: <b>${entries.length}</b>. Повторяющиеся символы помечены штрихами: второе вхождение — ′, третье — ′′ и так далее.<span class="l">Частота каждого символа даёт оценку вероятности: p<sub>i</sub> = n<sub>i</sub>/${N} с округлением до двух знаков.</span>`,
+      text:`Набор: <b>${labeled.join(' ')}</b> — ${N} символов, из них различных: <b>${entries.length}</b>.${DATA.skipped ? ` Остальные вхождения символов исходного текста (${DATA.skipped} шт.) не учитываются.` : ''}${DATA.missing.length ? ` Символов нет в тексте, их пропускаем: ${DATA.missing.map(esc).join(' ')}.` : ''} Повторяющиеся символы помечены штрихами: второе вхождение — ′, третье — ′′ и так далее.<span class="l">Частота каждого символа даёт оценку вероятности: p<sub>i</sub> = n<sub>i</sub>/${N} с округлением до двух знаков.</span>`,
       html:`<div class="code-src mono">${labeled.join(' ')}</div>`
     });
     steps.push({
       title:'Вероятности символов',
-      text:`Считаем частоты: ${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} раз → p = ${e.n}/${N} = ${f2(e.p)}`).join(', ')}.<span class="l">Сумма вероятностей ${f2(sumP)} (из-за округления может отличаться от 1). Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f2(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
+      text:`Считаем частоты: ${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} раз → p = ${e.n}/${N} = ${f2(e.p)}`).join(', ')}.<span class="l">Сумма вероятностей ${f2(sumP)}. Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f2(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
       html:probsHTML(entries)
     });
     if(orderNote === 'sort'){
@@ -1059,10 +1063,19 @@
   }
 
   function build(){
-    const chars = S.parseChars($('inp').value, 40, true).chars;
+    const allChars = S.parseChars($('inp').value, 60, true).chars.map(c => { const u = c.toUpperCase(); return [...u].length === 1 ? u : c; });
+    const want = [...new Set(S.parseChars($('set').value, 40, true).chars.map(c => { const u = c.toUpperCase(); return [...u].length === 1 ? u : c; }))];
+    const keep = new Set(), missing = [];
+    if(want.length){
+      want.forEach(c => { if(allChars.indexOf(c) >= 0) keep.add(c); else missing.push(c); });
+    } else {
+      for(const c of allChars){ if(keep.size >= 10) break; keep.add(c); }
+    }
+    const chars = allChars.filter(c => keep.has(c));
+    const skipped = allChars.length - chars.length;
     steps = []; ALL = null;
     if(!chars.length){
-      player.setSteps([{title:'Нет данных', text:'Введите хотя бы один символ — например, АБРАКАДАБРА.', html:''}]);
+      player.setSteps([{title:'Нет данных', text:missing.length ? `Ни одного из указанных символов нет в исходном тексте: ${missing.map(esc).join(' ')}.` : 'Введите исходный текст — например, АБРАКАДАБРА.', html:''}]);
       ['mH','mL','mK','mD'].forEach(id => { $(id).textContent = '—'; $(id).style.color = ''; });
       $('cmpBox').innerHTML = '';
       $('mNote').textContent = 'Постройте код, чтобы увидеть метрики.';
@@ -1071,16 +1084,25 @@
     const N = chars.length;
     const countMap = new Map();
     chars.forEach(ch => countMap.set(ch, (countMap.get(ch) || 0) + 1));
-    const entries = [...countMap.entries()].map(([ch, n], i) => {
-      const ph = Math.round(n * 100 / N), p = ph / 100;
+    const raw = [...countMap.entries()].map(([ch, n], i) => ({ch, n, i, ph:Math.round(n * 100 / N)}));
+    let diff = 100 - raw.reduce((a, e) => a + e.ph, 0);
+    const byP = raw.slice().sort((a, b) => b.ph - a.ph || a.i - b.i);
+    for(let k = 0; diff !== 0 && k < 1000; k++){
+      const e = byP[k % byP.length];
+      if(diff < 0){ if(e.ph > 1){ e.ph--; diff++; } } else { e.ph++; diff--; }
+    }
+    const entries = raw.map(({ch, n, i, ph}) => {
+      const p = ph / 100;
       const occ = n > 1
         ? `<i class="occ">${esc(ch)}${Array.from({length: n - 1}, (_, k) => ' ' + esc(ch) + '<span class="pr">' + '′'.repeat(k + 1) + '</span>').join('')}</i>`
         : '';
       return {ch, n, ph, p, i, occ, log:-Math.log2(p)};
     });
     const sorted = entries.slice().sort((a, b) => b.ph - a.ph || a.i - b.i);
-    const alpha = entries.slice().sort((a, b) => a.ch < b.ch ? -1 : a.ch > b.ch ? 1 : 0);
-    DATA = {chars, N, entries, sorted, alpha};
+    const RU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+    const akey = c => { const k = RU.indexOf(c); return k >= 0 ? k : 100 + c.codePointAt(0); };
+    const alpha = entries.slice().sort((a, b) => akey(a.ch) - akey(b.ch));
+    DATA = {chars, N, entries, sorted, alpha, skipped, missing};
     MSG = null;
     ALL = {
       shannon:calcShannon(sorted),
@@ -1122,12 +1144,15 @@
     $('decField').style.display = curCode === 'decode' ? '' : 'none';
   }
   $('decMethod').addEventListener('change', build);
+  $('set').addEventListener('change', build);
+  $('set').addEventListener('keydown', e => { if(e.key === 'Enter') build(); });
   $('msg').addEventListener('keydown', e => { if(e.key === 'Enter') build(); });
   syncFields();
   $('go').onclick = build;
   $('ex').onclick = () => {
     const pool = ['АБРАКАДАБРА','ИНФОРМАТИКА','ПРОГРАММИРОВАНИЕ','МАТЕМАТИКА','КОДИРОВАНИЕ','ХАФФМАН'];
     $('inp').value = pool[Math.floor(Math.random() * pool.length)];
+    $('set').value = '';
     build();
   };
   $('inp').addEventListener('keydown', e => { if(e.key === 'Enter') build(); });
