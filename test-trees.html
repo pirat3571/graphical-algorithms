@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тест по деревьям</title>
+<link rel="stylesheet" href="assets/style.css">
+    <link rel="icon" href="assets/favicon.ico">
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="tests.html">← Все тесты</a>
+  <span class="crumb">Деревья</span>
+  <button class="theme" id="themeBtn" type="button" title="Сменить тему">☾</button>
+</header>
+<main>
+  <h1>Тест по деревьям</h1>
+  <p class="lead">Вопросы по двоичным деревьям, деревьям поиска, АВЛ-деревьям, Б-деревьям и оптимальным деревьям. В каждом четыре варианта ответа. После выбора сразу видно, верно ли, и почему. «Начать заново» перемешивает вопросы и ответы.</p>
+  <section class="card" id="quiz"></section>
+  <nav class="pager">
+    <a href="test.html">← Сортировки и структуры</a>
+    <a href="tests.html">Все тесты →</a>
+  </nav>
+</main>
+<script src="assets/core.js"></script>
+<script src="assets/quiz.js?v=9"></script>
+<script>
+  TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.TREES_QUIZ, shuffleQuestions: true});
+</script>
+</body>
+</html>

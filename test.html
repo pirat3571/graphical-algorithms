@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Общий тест по алгоритмам и структурам данных</title>
+<title>Тест: сортировки и структуры данных</title>
 <link rel="stylesheet" href="assets/style.css">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
 <header class="topbar">
-  <a class="back" href="index.html">← Все разделы</a>
-  <span class="crumb">Тест</span>
+  <a class="back" href="tests.html">← Все тесты</a>
+  <span class="crumb">Сортировки и структуры</span>
   <button class="theme" id="themeBtn" type="button" title="Сменить тему">☾</button>
 </header>
 <main>
-  <h1>Общий тест</h1>
+  <h1>Тест: сортировки и структуры</h1>
   <p class="lead">Вопросы по сортировкам, поиску, трудоёмкости и структурам данных. В каждом четыре варианта ответа. После выбора сразу видно, верно ли, и почему. «Начать заново» перемешивает вопросы и ответы.</p>
   <section class="card" id="quiz"></section>
   <nav class="pager">
     <a href="structures.html">← Структуры данных</a>
-    <a href="index.html">Все разделы →</a>
+    <a href="test-trees.html">Тест по деревьям →</a>
   </nav>
 </main>
 <script src="assets/core.js"></script>
-<script src="assets/quiz.js"></script>
+<script src="assets/quiz.js?v=9"></script>
 <script>
   TreeSite.mountQuiz(TreeSite.$('quiz'), {title: 'Вопросы', items: TreeSite.GENERAL_QUIZ, shuffleQuestions: true});
 </script>
