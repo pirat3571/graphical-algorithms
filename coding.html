@@ -25,7 +25,7 @@
       </div>
       <div class="field">
         <label for="set">Символы для кодирования</label>
-        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="по умолчанию первые 10">
+        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="пусто — первые 10 различных">
       </div>
       <button class="p" id="go" type="button">Построить</button>
       <button id="ex" type="button">Пример</button>
@@ -426,6 +426,19 @@
     }
     return s;
   }
+  const bw = n => [2, 3, 4].indexOf(n % 10) >= 0 && [12, 13, 14].indexOf(n % 100) < 0 ? 'бита' : 'бит';
+  /* перевод дроби num/den в двоичную запись умножением на 2: по строке на каждый бит */
+  function qCalc(num, den, l){
+    const fmt = x => String(+(x / den).toFixed(3));
+    if(!num) return `<div class="qcalc">Q = 0, поэтому все ${l} ${bw(l)} равны 0.</div>`;
+    let x = num, h = '';
+    for(let i = 1; i <= l; i++){
+      const y = x * 2, bit = y >= den ? 1 : 0, rest = bit ? y - den : y;
+      h += `${fmt(x)} · 2 = ${fmt(y)} → <b>${bit}</b>${bit ? ` (дальше ${fmt(rest)})` : ''}<br>`;
+      x = rest;
+    }
+    return `<div class="qcalc">${h}</div>`;
+  }
   function bitsHTML(bits, l){
     if(!l) return '—';
     return `<span class="mono">0.<span class="hlbits">${esc(bits.slice(0, l))}</span><span class="dimbits">${esc(bits.slice(l))}</span></span>`;
@@ -562,7 +575,9 @@
   }
 
   /* mode: sh, gm — таблицы с P (неравенство) и Q; code — a, p, L, слово; fano — слово по разрядам */
-  function tableHTML(list, upTo, partial, mode){
+  function tableHTML(list, upTo, partial, mode, hl){
+    hl = hl || {};
+    const cl = (...c) => { c = c.filter(Boolean).join(' '); return c ? ` class="${c}"` : ''; };
     if(mode === 'fano') return fanoTable(list);
     const withQ = mode === 'sh' || mode === 'gm';
     const ineq = e => mode === 'gm'
@@ -573,8 +588,8 @@
     list.forEach((e, k) => {
       const done = !withQ || k < upTo, part = withQ && k === upTo && partial, show = done || part;
       h += `<tr${part ? ' class="cur"' : ''}><td class="sym">${esc(e.ch)}${e.occ || ''}</td>`
-        + `<td>${withQ ? (show ? ineq(e) : '·') : f2(e.p)}</td>`
-        + (withQ ? `<td${done ? '' : ' class="wt"'}>${done ? fq(e.Q) : '·'}</td>` : '')
+        + `<td${cl(show && (hl.p || []).indexOf(k) >= 0 ? 'used' : '')}>${withQ ? (show ? ineq(e) : '·') : f2(e.p)}</td>`
+        + (withQ ? `<td${cl(done ? '' : 'wt', done && (hl.q || []).indexOf(k) >= 0 ? 'used' : '', done && hl.out === k ? 'out' : '')}>${done ? fq(e.Q) : '·'}</td>` : '')
         + `<td${show ? '' : ' class="wt"'}>${show ? e.l : '·'}</td>`
         + `<td${done ? '' : ' class="wt"'}>${done ? `<span class="cw">${e.code ? esc(e.code) : '—'}</span>` : '·'}</td></tr>`;
     });
@@ -716,9 +731,14 @@
       text:`Набор: <b>${labeled.join(' ')}</b> — ${N} символов, из них различных: <b>${entries.length}</b>.${DATA.skipped ? ` Остальные вхождения символов исходного текста (${DATA.skipped} шт.) не учитываются.` : ''}${DATA.missing.length ? ` Символов нет в тексте, их пропускаем: ${DATA.missing.map(esc).join(' ')}.` : ''} Повторяющиеся символы помечены штрихами: второе вхождение — ′, третье — ′′ и так далее.<span class="l">Частота каждого символа даёт оценку вероятности: p<sub>i</sub> = n<sub>i</sub>/${N} с округлением до двух знаков.</span>`,
       html:`<div class="code-src mono">${labeled.join(' ')}</div>`
     });
+    const rawSum = entries.reduce((s, e) => s + e.ph0, 0), adjusted = entries.filter(e => e.adj);
+    const diff = Math.abs(rawSum - 100) / 100;
+    const probNote = rawSum === 100
+      ? 'Изначальная сумма вероятностей получилась ровно 1.00, поправка не нужна. Сумма должна быть ровно 1: вероятности задают полное распределение, а энтропия, неравенство Крафта и накопленные вероятности Q рассчитаны именно на него.'
+      : `Изначальная сумма вышла ${f2(rawSum / 100)}, а не 1. Сумма вероятностей должна быть ровно 1: вероятности задают полное распределение, и от этого зависят энтропия, неравенство Крафта и накопленные вероятности Q (если сумма больше 1, Q выходит за [0; 1) и слова не помещаются в интервал). Поэтому разницу ${f2(diff)} ${rawSum > 100 ? 'вычитаем у самых вероятных символов' : 'прибавляем к самым вероятным символам'}: ${adjusted.map(e => `«<b>${esc(e.ch)}</b>» ${f2(e.ph0 / 100)} → ${f2(e.p)}`).join(', ')}. У них сотая доля даёт наименьшую относительную ошибку.`;
     steps.push({
       title:'Вероятности символов',
-      text:`Считаем частоты: ${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} раз → p = ${e.n}/${N} = ${f2(e.p)}`).join(', ')}.<span class="l">Сумма вероятностей ${f2(sumP)}. Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f2(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
+      text:`Считаем частоты:<br>${entries.map(e => `«<b>${esc(e.ch)}</b>» встретился ${e.n} ${[2, 3, 4].indexOf(e.n % 10) >= 0 && [12, 13, 14].indexOf(e.n % 100) < 0 ? 'раза' : 'раз'} → p = ${e.n}/${N} ${e.adj ? `≈ ${f2(e.ph0 / 100)} → ${f2(e.p)} (поправка)` : `= ${f2(e.p)}`}`).join(',<br>')}.<span class="l">${probNote}</span><span class="l">Сумма вероятностей ${f2(sumP)}. Энтропия H = −Σp<sub>i</sub>·log₂p<sub>i</sub> = <b>${f2(ALL.H)}</b> бит — ниже средней длины любого кода не опуститься.</span>`,
       html:probsHTML(entries)
     });
     if(orderNote === 'sort'){
@@ -942,8 +962,8 @@
         });
         steps.push({
           title:`Кодовое слово для «${e.ch}»`,
-          text:`Накопленная вероятность Q = сумма вероятностей предыдущих символов = ${fq(e.Q)}. В двоичной системе Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> знаков после запятой дают код <b class="cw">${e.code ? esc(e.code) : '—'}</b>.`,
-          html:tableHTML(c.list, k + 1, false, 'sh')
+          text:`Накопленная вероятность Q = сумма вероятностей предыдущих символов = ${k ? `${fq(c.list[k - 1].Q)} + ${f2(c.list[k - 1].p)} = ` : ''}${fq(e.Q)}${k ? '' : ' (предыдущих символов нет)'}. Переводим Q в двоичную запись: умножаем на 2, целая часть — очередной бит, дробная идёт в следующую строку.${qCalc(Math.round(e.Q * 100), 100, e.l)}Так Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> ${bw(e.l)} дают код <b class="cw">${e.code ? esc(e.code) : '—'}</b>.${k ? '<span class="l">В таблице синим выделены p и Q предыдущей строки, из которых считается новое Q, зелёным — полученное значение.</span>' : ''}`,
+          html:tableHTML(c.list, k + 1, false, 'sh', {p:k ? [k - 1] : [], q:k ? [k - 1] : [], out:k})
         });
       });
       treeStep(c.list, 'Каждое кодовое слово — путь от корня: 0 влево, 1 вправо. Ребро подписано префиксом слова, лист — символом. Если в дереве есть узлы с одним потомком, неравенство Крафта даёт сумму меньше 1: часть кодовых слов остаётся неиспользованной.');
@@ -961,8 +981,8 @@
         });
         steps.push({
           title:`Кодовое слово для «${e.ch}»`,
-          text:`Середина интервала: Q = (сумма предыдущих) + p/2 = ${fq(e.Q)}. В двоичной системе Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> бит — код <b class="cw">${esc(e.code)}</b>.`,
-          html:tableHTML(c.list, k + 1, false, 'gm')
+          text:`Середина интервала: Q = (сумма вероятностей предыдущих символов) + p/2 = ${fq(c.list.slice(0, k).reduce((s, x) => s + Math.round(x.p * 100), 0) / 100)} + ${f2(e.p)}/2 = ${fq(e.Q)}. Переводим Q в двоичную запись: умножаем на 2, целая часть — очередной бит, дробная идёт в следующую строку.${qCalc(Math.round(e.Q * 200), 200, e.l)}Так Q = ${bitsHTML(e.bits, e.l)}. Первые <b>${e.l}</b> ${bw(e.l)} — код <b class="cw">${esc(e.code)}</b>.<span class="l">В таблице синим выделены p, из которых считается Q (все предыдущие и текущее), зелёным — полученное значение.</span>`,
+          html:tableHTML(c.list, k + 1, false, 'gm', {p:Array.from({length:k + 1}, (_, q) => q), out:k})
         });
       });
       treeStep(c.list, 'Листья дерева слева направо идут в алфавитном порядке символов: так и устроен алфавитный код.');
@@ -1092,7 +1112,7 @@
       const kTerms = group(list.slice().sort((a, b) => a.l - b.l), e => e.l).map(g => `${mul(g.n)}${pw(g.e.l)}`);
       const Lm = Math.max.apply(null, list.map(e => e.l));
       const num = list.reduce((s, e) => s + Math.pow(2, Lm - e.l), 0), den = Math.pow(2, Lm), g0 = gcd(num, den);
-      const frac = den / g0 > 1 ? `${num / g0}/${den / g0} = ${f4(num / den)}` : String(num / g0);
+      const frac = den / g0 > 1 ? `${num / g0}/${den / g0} = ${f3(num / den)}` : String(num / g0);
       TIPS.mK = tip('Неравенство Крафта', `Σ 2<sup>−lᵢ</sup><br>= ${kTerms.join(' + ')}<br>= <b>${frac}</b>${num <= den ? ' ≤ 1 ✓' : ' &gt; 1 ✗'}`, 'Пока сумма не больше 1, префиксный код с такими длинами существует. Сумма меньше 1 означает, что часть кодовых слов не использована.');
     }
     TIPS.mD = tip('Избыточность L − H', `L − H = ${f3(Lv)} − ${f3(H)}<br>= <b>${f3(Lv - H)}</b>`, 'Насколько средняя длина кода превышает энтропию. Чем меньше, тем ближе код к пределу.');
@@ -1147,19 +1167,19 @@
     const N = chars.length;
     const countMap = new Map();
     chars.forEach(ch => countMap.set(ch, (countMap.get(ch) || 0) + 1));
-    const raw = [...countMap.entries()].map(([ch, n], i) => ({ch, n, i, ph:Math.round(n * 100 / N)}));
+    const raw = [...countMap.entries()].map(([ch, n], i) => ({ch, n, i, ph:Math.round(n * 100 / N), ph0:Math.round(n * 100 / N)}));
     let diff = 100 - raw.reduce((a, e) => a + e.ph, 0);
     const byP = raw.slice().sort((a, b) => b.ph - a.ph || a.i - b.i);
     for(let k = 0; diff !== 0 && k < 1000; k++){
       const e = byP[k % byP.length];
       if(diff < 0){ if(e.ph > 1){ e.ph--; diff++; } } else { e.ph++; diff--; }
     }
-    const entries = raw.map(({ch, n, i, ph}) => {
+    const entries = raw.map(({ch, n, i, ph, ph0}) => {
       const p = ph / 100;
       const occ = n > 1
         ? `<i class="occ">${esc(ch)}${Array.from({length: n - 1}, (_, k) => ' ' + esc(ch) + '<span class="pr">' + '′'.repeat(k + 1) + '</span>').join('')}</i>`
         : '';
-      return {ch, n, ph, p, i, occ, log:-Math.log2(p)};
+      return {ch, n, ph, ph0, adj:ph !== ph0, p, i, occ, log:-Math.log2(p)};
     });
     const sorted = entries.slice().sort((a, b) => b.ph - a.ph || a.i - b.i);
     const RU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';

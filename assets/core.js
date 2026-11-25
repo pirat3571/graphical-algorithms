@@ -162,12 +162,13 @@
   };
 
   /* ---------- B-дерево ---------- */
-  TS.layoutBTree = function(root, cellW){
+  TS.layoutBTree = function(root, cellW, gap){
     cellW = cellW || 42;
+    gap = gap === undefined ? 10 : gap;   /* минимальный зазор между соседними страницами, px */
     function measure(n){
       const w = Math.max(n.keys.length * cellW + 16, 54);
       let sum = 0;
-      n.ch.forEach((c, i) => { measure(c); sum += c._sub + (i ? 14 : 0); });
+      n.ch.forEach((c, i) => { measure(c); sum += c._sub + (i ? gap : 0); });
       n._w = w;
       n._sub = Math.max(w, sum);
       return n._sub;
@@ -179,9 +180,9 @@
       n._d = depth;
       if(depth > maxDepth) maxDepth = depth;
       let sum = 0;
-      n.ch.forEach((c, i) => { sum += c._sub + (i ? 14 : 0); });
+      n.ch.forEach((c, i) => { sum += c._sub + (i ? gap : 0); });
       let cx = left + (n._sub - sum) / 2;
-      n.ch.forEach((c, i) => { place(c, cx, depth + 1); cx += c._sub + (i ? 14 : 0); });
+      n.ch.forEach(c => { place(c, cx, depth + 1); cx += c._sub + gap; });
     }
     place(root, 0, 0);
     return {maxDepth, width:root._sub};
@@ -209,8 +210,10 @@
         const cx = c._cx + ox, cy = 22 + c._d * LEVEL;
         const x1 = x - w / 2 + PAD + i * CELL;
         if(dots){
-          const dx = cx - x1, dy = cy - (y + NH), len = Math.hypot(dx, dy) || 1;
-          edges += `<line x1="${x1}" y1="${y + NH}" x2="${cx - dx / len * 2}" y2="${cy - dy / len * 2}" stroke="var(--tx)" stroke-width="1.1" marker-end="url(#bah)"/>`;
+          /* стрелка выходит из точки-указателя и приходит в середину верхней грани потомка */
+          const y1 = y + NH / 2;
+          const dx = cx - x1, dy = cy - y1, len = Math.hypot(dx, dy) || 1;
+          edges += `<line x1="${x1}" y1="${y1}" x2="${cx - dx / len * 2}" y2="${cy - dy / len * 2}" stroke="var(--tx)" stroke-width="1.1" marker-end="url(#bah)"/>`;
         } else edges += `<line x1="${x1}" y1="${y + NH}" x2="${cx}" y2="${cy}" stroke="var(--mut)" stroke-width="1.4" opacity=".75"/>`;
         walk(c);
       });
@@ -237,7 +240,7 @@
     })(t);
 
     const defs = dots ? '<defs><marker id="bah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="var(--tx)" stroke-width="1.3"/></marker></defs>' : '';
-    el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">${defs}${edges}${nodes}</svg>`;
+    el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">${defs}${dots ? nodes + edges : edges + nodes}</svg>`;
   };
 
   /* ---------- Таблица динамического программирования ---------- */
