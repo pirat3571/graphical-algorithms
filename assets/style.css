@@ -249,7 +249,6 @@ button:disabled{opacity:.38;cursor:default}
   border:2px solid var(--card);
   box-shadow:0 1px 4px rgba(40,30,15,.3);
 }
-.scrub:focus-visible{outline:2px solid var(--acsoft);border-radius:999px}
 /* Выпадающие списки в тёмных темах: тёмный фон и светлый текст пунктов */
 :root[data-theme="dark"] option,
 :root[data-theme="amoled"] option{background:#1e2125;color:#e4e7eb}
@@ -819,3 +818,61 @@ body.pocket-open .sort-layout.keep-meter .meter-box{display:block;position:stati
 .qstack{display:grid;justify-items:center;gap:2px;margin:4px 0}
 .qr{line-height:0;max-width:100%}
 .qcap{text-align:center;font-size:13px;color:var(--mut);margin:2px 0 6px}
+
+/* ползунок шагов: без обводки при фокусе */
+.scrub,.scrub:focus,.scrub:focus-visible{outline:none;-webkit-tap-highlight-color:transparent}
+.scrub::-moz-focus-outer{border:0}
+
+/* ---------- Выпадающий список ---------- */
+.dd{position:relative;width:100%}
+.dd-native{position:absolute!important;left:0;top:0;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;border:0!important;opacity:0;pointer-events:none}
+button.dd-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:9px 12px;font-size:16px;line-height:1.35;background:var(--bg);border:1px solid var(--bd);border-radius:9px;color:var(--tx)}
+button.dd-btn:hover:not(:disabled){color:var(--tx)}
+.dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-chev{flex:none;width:12px;height:8px;background:var(--chev) no-repeat center/12px 8px;transition:transform .2s}
+.dd.open .dd-chev{transform:rotate(180deg)}
+.dd-btn:focus-visible,.dd.open .dd-btn{outline:0;border-color:var(--ac);box-shadow:0 0 0 2px var(--acsoft)}
+.dd-list{position:absolute;z-index:70;left:0;right:0;top:calc(100% + 6px);margin:0;padding:5px;list-style:none;max-height:260px;overflow:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--bd);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.2);opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:top;transition:opacity .15s,transform .15s,visibility .15s}
+.dd.up .dd-list{top:auto;bottom:calc(100% + 6px);transform:translateY(6px) scale(.98);transform-origin:bottom}
+.dd.open .dd-list{opacity:1;visibility:visible;transform:none}
+.dd-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px 8px 12px;border-radius:8px;font-size:15px;line-height:1.35;color:var(--tx);cursor:pointer;-webkit-user-select:none;user-select:none}
+.dd-list li.act{background:var(--acsoft)}
+.dd-list li.sel{font-weight:600;color:var(--ac)}
+.dd-list li.sel::after{content:"";flex:none;width:6px;height:11px;margin-top:-3px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.card.dd-up{position:relative;z-index:50}
+:root[data-theme="amoled"] .dd-list{background:#0c0e13;border-color:rgba(255,255,255,.3)}
+:root[data-theme="amoled"] .dd-list li.act{background:rgba(255,255,255,.1)}
+:root[data-theme="amoled"] .dd-list li.sel{color:#fff}
+@media (prefers-reduced-motion:reduce){.dd-list,.dd-chev{transition:none}}
+
+/* ---------- Метрики с подсказкой ---------- */
+.meter[tabindex]{position:relative;padding-bottom:20px;cursor:help;outline:0;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s}
+.meter[tabindex]::after{content:"i";position:absolute;bottom:5px;right:6px;width:14px;height:14px;border:1px solid var(--bd);border-radius:50%;display:grid;place-items:center;font:italic 700 9px/1 Georgia,serif;color:var(--mut);transition:color .15s,border-color .15s}
+.meter[tabindex]:hover,.meter[tabindex]:focus-visible{transform:translateY(-2px);border-color:var(--ac);background:var(--acsoft);box-shadow:0 8px 18px rgba(0,0,0,.14)}
+.meter[tabindex]:hover::after,.meter[tabindex]:focus-visible::after{color:var(--ac);border-color:var(--ac)}
+.mtip{position:fixed;z-index:80;left:0;top:0;max-width:min(360px,calc(100vw - 16px));padding:12px 14px;border:1px solid var(--ac);border-radius:12px;background:var(--bg);color:var(--tx);box-shadow:0 16px 40px rgba(0,0,0,.28);font-size:13px;line-height:1.55;pointer-events:none;opacity:0;visibility:hidden;transform:translateY(6px) scale(.97);transform-origin:top;transition:opacity .15s,transform .15s,visibility .15s}
+.mtip.up{transform:translateY(-6px) scale(.97);transform-origin:bottom}
+.mtip.on{opacity:1;visibility:visible;transform:none}
+.mtip::before{content:"";position:absolute;left:var(--ax,50%);top:-6px;width:10px;height:10px;background:inherit;border-left:1px solid var(--ac);border-top:1px solid var(--ac);transform:translateX(-50%) rotate(45deg)}
+.mtip.up::before{top:auto;bottom:-6px;border:0;border-right:1px solid var(--ac);border-bottom:1px solid var(--ac)}
+.mtip .tt{display:block;margin-bottom:6px;font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ac)}
+.mtip .tf{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px;line-height:1.7;word-break:break-word}
+.mtip .tf b{color:var(--ac)}
+.mtip small{display:block;margin-top:7px;font-size:12px;color:var(--mut);line-height:1.45}
+@media (prefers-reduced-motion:reduce){.mtip,.meter[tabindex]{transition:none}}
+
+
+/* ---------- Полосы прокрутки ---------- */
+@supports (-moz-appearance:none){
+  *{scrollbar-width:thin;scrollbar-color:var(--mut) transparent}
+}
+::-webkit-scrollbar{width:14px;height:14px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--mut);background:color-mix(in srgb,var(--mut) 45%,transparent);border:4px solid transparent;border-radius:999px;background-clip:content-box;transition:background-color .15s}
+::-webkit-scrollbar-thumb:hover{background:var(--ac);background-clip:content-box}
+::-webkit-scrollbar-thumb:active{background:var(--ac);background-clip:content-box}
+::-webkit-scrollbar-corner{background:transparent}
+.dd-list::-webkit-scrollbar,.pocket-scroll::-webkit-scrollbar{width:12px;height:12px}
+.canvas::-webkit-scrollbar{height:12px}
+:root[data-theme="amoled"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);background-clip:content-box}
+:root[data-theme="amoled"] ::-webkit-scrollbar-thumb:hover,:root[data-theme="amoled"] ::-webkit-scrollbar-thumb:active{background:rgba(255,255,255,.6);background-clip:content-box}

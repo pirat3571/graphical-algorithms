@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Кодирование — Шеннон, Фано, Хаффман, Гилберт-Мур</title>
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css">
     <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
@@ -25,7 +25,7 @@
       </div>
       <div class="field">
         <label for="set">Символы для кодирования</label>
-        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="пусто — первые 10 различных">
+        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="по умолчанию первые 10">
       </div>
       <button class="p" id="go" type="button">Построить</button>
       <button id="ex" type="button">Пример</button>
@@ -65,10 +65,10 @@
     <aside class="meter-box" aria-live="polite">
       <h3>Метрики кода</h3>
       <div class="meter-grid">
-        <div class="meter h"><b id="mH">—</b><span>H — энтропия, бит</span></div>
-        <div class="meter c"><b id="mL">—</b><span>L — средняя длина</span></div>
-        <div class="meter k"><b id="mK">—</b><span>Σ 2<sup>−l</sup> — Крафт</span></div>
-        <div class="meter m"><b id="mD">—</b><span>L − H</span></div>
+        <div class="meter h" tabindex="0"><b id="mH">—</b><span>H — энтропия, бит</span></div>
+        <div class="meter c" tabindex="0"><b id="mL">—</b><span>L — средняя длина</span></div>
+        <div class="meter k" tabindex="0"><b id="mK">—</b><span>Σ 2<sup>−l</sup> — Крафт</span></div>
+        <div class="meter m" tabindex="0"><b id="mD">—</b><span>L − H</span></div>
       </div>
       <div class="meter-note" id="mNote">Постройте код, чтобы увидеть метрики.</div>
       <div class="code-cmp" id="cmpBox"></div>
@@ -133,11 +133,11 @@
     <span></span>
   </nav>
 </main>
-<script src="assets/core.js?v=4"></script>
-<script src="assets/stats.js?v=1"></script>
-<script src="assets/quiz.js?v=6"></script>
-<script src="assets/algo.js?v=4"></script>
-<script src="assets/pocket.js?v=4"></script>
+<script src="assets/core.js"></script>
+<script src="assets/stats.js"></script>
+<script src="assets/quiz.js"></script>
+<script src="assets/algo.js"></script>
+<script src="assets/pocket.js"></script>
 <script>
 (function(){
   'use strict';
@@ -1038,6 +1038,67 @@
     }
   };
 
+  /* ---------- подсказки к метрикам: формула с подставленными числами ---------- */
+  let TIPS = {};
+  const tipEl = document.createElement('div');
+  tipEl.className = 'mtip';
+  tipEl.setAttribute('role', 'tooltip');
+  document.body.appendChild(tipEl);
+  let tipFor = null;
+  function hideTip(){ tipEl.classList.remove('on'); tipFor = null; }
+  function showTip(m){
+    const b = m.querySelector('b'), h = b && TIPS[b.id];
+    if(!h){ hideTip(); return; }
+    tipFor = m;
+    tipEl.innerHTML = h;
+    tipEl.classList.remove('on', 'up');
+    tipEl.style.left = '0px'; tipEl.style.top = '0px';
+    const r = m.getBoundingClientRect(), w = tipEl.offsetWidth, hh = tipEl.offsetHeight;
+    const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    let top = r.bottom + 12, up = false;
+    if(top + hh > window.innerHeight - 8 && r.top - hh - 12 > 8){ up = true; top = r.top - hh - 12; }
+    tipEl.style.left = left + 'px';
+    tipEl.style.top = top + 'px';
+    tipEl.style.setProperty('--ax', Math.max(16, Math.min(w - 16, r.left + r.width / 2 - left)) + 'px');
+    tipEl.classList.toggle('up', up);
+    tipEl.classList.add('on');
+  }
+  document.querySelectorAll('.meter[tabindex]').forEach(m => {
+    m.addEventListener('mouseenter', () => showTip(m));
+    m.addEventListener('mouseleave', hideTip);
+    m.addEventListener('focus', () => showTip(m));
+    m.addEventListener('blur', hideTip);
+  });
+  window.addEventListener('scroll', hideTip, {passive:true});
+
+  function buildTips(key, H, Lv, isA){
+    const mul = n => n > 1 ? n + '·' : '';
+    const group = (arr, kf) => {
+      const m = new Map();
+      arr.forEach(e => { const k = kf(e), g = m.get(k); if(g) g.n++; else m.set(k, {n:1, e}); });
+      return [...m.values()];
+    };
+    const tip = (title, formula, note) => `<span class="tt">${title}</span><div class="tf">${formula}</div>${note ? `<small>${note}</small>` : ''}`;
+    TIPS = {};
+    const hTerms = group(DATA.sorted, e => e.ph).map(g => `${mul(g.n)}${f2(g.e.p)}·log₂${f2(g.e.p)}`);
+    TIPS.mH = tip('Энтропия H', `H = −Σ pᵢ·log₂pᵢ<br>= −(${hTerms.join(' + ')})<br>= <b>${f3(H)}</b> бит`, 'Предел сжатия: короче, чем H бит на символ, закодировать нельзя.');
+    if(isA){
+      TIPS.mL = tip('Средняя длина L', `L = k / n = ${ARITH.k} / ${MSG.length}<br>= <b>${f3(Lv)}</b> бит/символ`, 'k — число бит кода всего сообщения, n — число символов в нём.');
+      TIPS.mK = tip('Неравенство Крафта', 'Не применяется', 'Крафт относится к побуквенным префиксным кодам. Арифметический код кодирует всё сообщение одним числом, слов по символам у него нет.');
+    } else {
+      const list = ALL[key].list;
+      const lTerms = group(list, e => e.ph + '_' + e.l).map(g => `${mul(g.n)}${f2(g.e.p)}·${g.e.l}`);
+      TIPS.mL = tip('Средняя длина L', `L = Σ pᵢ·lᵢ<br>= ${lTerms.join(' + ')}<br>= <b>${f3(Lv)}</b> бит/символ`, 'Сколько бит в среднем уходит на один символ.');
+      const kTerms = group(list.slice().sort((a, b) => a.l - b.l), e => e.l).map(g => `${mul(g.n)}${pw(g.e.l)}`);
+      const Lm = Math.max.apply(null, list.map(e => e.l));
+      const num = list.reduce((s, e) => s + Math.pow(2, Lm - e.l), 0), den = Math.pow(2, Lm), g0 = gcd(num, den);
+      const frac = den / g0 > 1 ? `${num / g0}/${den / g0} = ${f4(num / den)}` : String(num / g0);
+      TIPS.mK = tip('Неравенство Крафта', `Σ 2<sup>−lᵢ</sup><br>= ${kTerms.join(' + ')}<br>= <b>${frac}</b>${num <= den ? ' ≤ 1 ✓' : ' &gt; 1 ✗'}`, 'Пока сумма не больше 1, префиксный код с такими длинами существует. Сумма меньше 1 означает, что часть кодовых слов не использована.');
+    }
+    TIPS.mD = tip('Избыточность L − H', `L − H = ${f3(Lv)} − ${f3(H)}<br>= <b>${f3(Lv - H)}</b>`, 'Насколько средняя длина кода превышает энтропию. Чем меньше, тем ближе код к пределу.');
+    if(tipFor) showTip(tipFor);
+  }
+
   /* ---------- метрики ---------- */
   function fillMetrics(){
     const key = curCode === 'decode' ? $('decMethod').value : curCode, H = ALL.H;
@@ -1049,6 +1110,7 @@
     kEl.textContent = kr === null ? '—' : f3(kr);
     kEl.style.color = kr === null ? '' : (kr <= 1 + 1e-9 ? 'var(--ok)' : 'var(--bad)');
     $('mD').textContent = f3(Lv - H);
+    buildTips(key, H, Lv, isA);
     $('mNote').innerHTML = `H = −Σp<sub>i</sub>·log₂p<sub>i</sub> — теоретический предел. L = Σp<sub>i</sub>·L<sub>i</sub>. Крафт: Σ2<sup>−L<sub>i</sub></sup> ≤ 1. Для побуквенных кодов всё считается по p<sub>i</sub>, округлённым до 0,01.${isA ? ' Для арифметического кода L — число бит кода, делённое на длину сообщения.' : ''}`;
     const order = [['shannon','Шеннон'],['fano','Фано'],['huffman','Хаффман'],['gm','Гилберт-Мур']];
     const minL = Math.min.apply(null, order.map(o => ALL[o[0]].L));
@@ -1078,6 +1140,7 @@
       player.setSteps([{title:'Нет данных', text:missing.length ? `Ни одного из указанных символов нет в исходном тексте: ${missing.map(esc).join(' ')}.` : 'Введите исходный текст — например, АБРАКАДАБРА.', html:''}]);
       ['mH','mL','mK','mD'].forEach(id => { $(id).textContent = '—'; $(id).style.color = ''; });
       $('cmpBox').innerHTML = '';
+      TIPS = {}; hideTip();
       $('mNote').textContent = 'Постройте код, чтобы увидеть метрики.';
       return;
     }

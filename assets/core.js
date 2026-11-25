@@ -343,11 +343,17 @@
         go(cur + 1);
       }, opts.autoplay || 1700);
     };
+    /* стрелки ← и → листают шаги всегда, а не только при фокусе на ползунке */
     document.addEventListener('keydown', e => {
-      const tag = (e.target && e.target.tagName) || '';
-      if(/INPUT|SELECT|TEXTAREA|BUTTON/.test(tag)) return;
-      if(e.key === 'ArrowRight'){ stop(); go(cur + 1); }
-      if(e.key === 'ArrowLeft'){ stop(); go(cur - 1); }
+      if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const t = e.target || {}, tag = t.tagName || '';
+      if(t.isContentEditable || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if(tag === 'INPUT' && t.type !== 'checkbox') return;   /* в полях ввода и на самом ползунке стрелки работают сами */
+      if(t.closest && t.closest('.dd')) return;
+      e.preventDefault();
+      stop();
+      go(cur + (e.key === 'ArrowRight' ? 1 : -1));
     });
     return api;
   };
@@ -376,6 +382,114 @@
     });
   };
   TS.enhanceNumbers();
+
+  /* ---------- Выпадающие списки: свой вид вместо системного ---------- */
+  TS.enhanceSelects = function(root){
+    (root || document).querySelectorAll('select').forEach(sel => {
+      if(sel.dataset.dd) return;
+      sel.dataset.dd = '1';
+      const wrap = document.createElement('div');
+      wrap.className = 'dd';
+      sel.parentNode.insertBefore(wrap, sel);
+      wrap.appendChild(sel);
+      sel.classList.add('dd-native');
+      sel.tabIndex = -1;
+      sel.setAttribute('aria-hidden', 'true');
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'dd-btn';
+      btn.setAttribute('aria-haspopup', 'listbox');
+      btn.setAttribute('aria-expanded', 'false');
+      const list = document.createElement('ul');
+      list.className = 'dd-list';
+      list.setAttribute('role', 'listbox');
+      wrap.appendChild(btn); wrap.appendChild(list);
+      const label = sel.id ? document.querySelector('label[for="' + sel.id + '"]') : null;
+      if(label){
+        if(!label.id) label.id = sel.id + '-lbl';
+        btn.setAttribute('aria-labelledby', label.id);
+        label.addEventListener('click', e => { e.preventDefault(); btn.focus(); });
+      }
+      let act = -1;
+      const card = () => wrap.closest('.card');
+      const isOpen = () => wrap.classList.contains('open');
+      function sync(){
+        const i = sel.selectedIndex, o = sel.options[i];
+        btn.innerHTML = '<span></span><i class="dd-chev"></i>';
+        btn.firstChild.textContent = o ? o.textContent : '';
+        Array.from(list.children).forEach((li, k) => {
+          li.classList.toggle('sel', k === i);
+          li.setAttribute('aria-selected', k === i ? 'true' : 'false');
+        });
+      }
+      function mark(i){
+        act = Math.max(0, Math.min(list.children.length - 1, i));
+        Array.from(list.children).forEach((li, k) => li.classList.toggle('act', k === act));
+        const li = list.children[act];
+        if(!li) return;
+        if(li.offsetTop < list.scrollTop) list.scrollTop = li.offsetTop - 4;
+        else if(li.offsetTop + li.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = li.offsetTop + li.offsetHeight - list.clientHeight + 4;
+      }
+      function open(){
+        if(isOpen()) return;
+        wrap.classList.remove('up');
+        wrap.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        const c = card(); if(c) c.classList.add('dd-up');
+        const r = btn.getBoundingClientRect();
+        if(r.bottom + list.offsetHeight + 12 > window.innerHeight && r.top > list.offsetHeight + 12) wrap.classList.add('up');
+        mark(sel.selectedIndex);
+      }
+      function close(){
+        wrap.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        const c = card(); if(c) c.classList.remove('dd-up');
+      }
+      function pick(i){
+        if(i < 0 || i >= sel.options.length) return;
+        const changed = sel.selectedIndex !== i;
+        sel.selectedIndex = i;
+        sync(); close(); btn.focus();
+        if(changed){
+          sel.dispatchEvent(new Event('input', {bubbles:true}));
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      }
+      Array.from(sel.options).forEach((o, i) => {
+        const li = document.createElement('li');
+        li.setAttribute('role', 'option');
+        li.textContent = o.textContent;
+        li.dataset.i = i;
+        list.appendChild(li);
+      });
+      sync();
+      sel.addEventListener('change', sync);
+      btn.addEventListener('click', () => { if(isOpen()) close(); else open(); });
+      btn.addEventListener('keydown', e => {
+        const k = e.key;
+        if(k === 'ArrowDown' || k === 'ArrowUp'){
+          e.preventDefault();
+          if(!isOpen()) open(); else mark(act + (k === 'ArrowDown' ? 1 : -1));
+        } else if(k === 'Home' && isOpen()){ e.preventDefault(); mark(0); }
+        else if(k === 'End' && isOpen()){ e.preventDefault(); mark(list.children.length - 1); }
+        else if((k === 'Enter' || k === ' ') && isOpen()){ e.preventDefault(); pick(act); }
+        else if(k === 'Escape' && isOpen()){ e.preventDefault(); e.stopPropagation(); close(); }
+        else if(k === 'Tab') close();
+      });
+      btn.addEventListener('keyup', e => { if(e.key === ' ') e.preventDefault(); });
+      list.addEventListener('mousedown', e => e.preventDefault());
+      list.addEventListener('mousemove', e => {
+        const li = e.target.closest('li');
+        if(li && +li.dataset.i !== act) mark(+li.dataset.i);
+      });
+      list.addEventListener('click', e => {
+        const li = e.target.closest('li');
+        if(li) pick(+li.dataset.i);
+      });
+      wrap.addEventListener('focusout', e => { if(!wrap.contains(e.relatedTarget)) close(); });
+      document.addEventListener('mousedown', e => { if(!wrap.contains(e.target)) close(); });
+    });
+  };
+  TS.enhanceSelects();
 
   /* ---------- Тема ---------- */
   TS.initTheme = function(){
