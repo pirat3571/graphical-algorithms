@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -24,7 +24,7 @@
       </div>
       <div class="field">
         <label for="set">Символы для кодирования</label>
-        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="пусто — первые 10 различных">
+        <input id="set" maxlength="40" autocomplete="off" spellcheck="false" placeholder="по умолчанию первые 10">
       </div>
       <button class="p" id="go" type="button">Построить</button>
       <button id="ex" type="button">Пример</button>
@@ -445,7 +445,7 @@
   function probsHTML(list, o){
     o = o || {};
     return '<div class="probs">' + list.map((e, k) =>
-      `<span class="prob${o.hot === k ? ' hot' : ''}"><b>${esc(e.ch)}</b><i>×${e.n} · ${f2(e.p)}</i></span>`
+      `<span class="prob${o.hot === k ? ' hot' : ''}"><b>${esc(e.ch)}</b><i>×${e.n} = ${f2(e.p)}</i></span>`
     ).join('') + '</div>';
   }
 
