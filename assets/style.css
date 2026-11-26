@@ -168,9 +168,6 @@ a{color:var(--ac)}
 .topbar .back{color:var(--mut);text-decoration:none;padding:6px 11px;border:1px solid var(--bd);border-radius:9px;background:var(--card);white-space:nowrap}
 .topbar .back:hover{color:var(--ac);border-color:var(--ac)}
 .crumb{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.theme{margin-left:auto;padding:5px 10px;font-size:15px;line-height:1.4;border-radius:9px;background:var(--card);color:var(--mut);border:1px solid var(--bd);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.theme svg{width:16px;height:16px;display:block}
-.theme:hover{color:var(--ac);border-color:var(--ac)}
 .lead{color:var(--mut);margin:-4px 0 18px;max-width:78ch}
 .kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--ac);font-weight:700}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
@@ -884,3 +881,62 @@ table.ctable td.out{background:var(--oksoft);box-shadow:inset 0 0 0 1.5px var(--
 /* кодирование: ручной перевод Q в двоичную запись */
 .qcalc{margin:8px 0;padding:8px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13.5px;line-height:1.75}
 .qcalc b{color:var(--ac);font-size:15px}
+
+/* ---------- Переключатель темы и режим без анимаций ---------- */
+.tsw{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:48px;height:48px;z-index:55}
+.tsw::before{content:"";position:absolute;left:-8px;right:-8px;bottom:0;height:0}
+.tsw.open::before{height:310px}
+
+:root .tsw button{position:absolute;padding:0;min-height:0;border:0;background:transparent;box-shadow:none;border-radius:50%;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
+:root .tsw button::after{display:none}
+:root .tsw button:hover:not(:disabled){border-color:transparent!important;box-shadow:none!important}
+
+/* клякса: контур рисуется в SVG и пересчитывается каждый кадр, обводка идёт по всей форме */
+.sp{position:absolute;left:50%;top:50%;width:72px;height:72px;margin:-36px 0 0 -36px;overflow:visible;pointer-events:none;filter:drop-shadow(0 4px 5px rgba(0,0,0,.22))}
+.sp path{fill:var(--pf);stroke:var(--pr);stroke-width:1.9;stroke-linejoin:round;transition:fill .3s,stroke .3s}
+.tsw-main .sp{--pf:var(--mf);--pr:var(--mr)}
+.tsw-d .sp{--pf:var(--f);--pr:var(--r)}
+.tsw-d[aria-pressed="true"] .sp{filter:drop-shadow(0 0 5px var(--r)) drop-shadow(0 4px 5px rgba(0,0,0,.22))}
+
+:root .tsw .tsw-main{left:0;bottom:0;width:48px;height:48px;display:grid;place-items:center;color:var(--mi);z-index:2;transition:transform .35s cubic-bezier(.2,1.5,.4,1),color .3s}
+:root .tsw .tsw-main:hover:not(:disabled){color:var(--mi)}
+.tsw.open .tsw-main{transform:scale(.92)}
+.tsw-main .ic{position:relative;z-index:1;display:grid}
+.tsw-main .ic svg{width:22px;height:22px;transition:transform .6s cubic-bezier(.2,1.4,.4,1)}
+.tsw.open .tsw-main .ic svg{transform:rotate(90deg)}
+
+/* слот отвечает только за вылет вверх; желе работает внутри него и положение не меняет */
+.tsw-slot{position:absolute;left:0;bottom:0;width:48px;height:48px;z-index:1;pointer-events:none;opacity:0;--s:.2;--y:0px;transform:translateY(var(--y)) scale(var(--s));transition:transform .6s cubic-bezier(.2,1.35,.4,1) var(--dl),opacity .15s var(--dl)}
+.tsw.open .tsw-slot{opacity:1;--s:1;--y:calc(-1px * var(--up))}
+:root .tsw .tsw-d{left:5px;bottom:5px;width:38px;height:38px;pointer-events:none}
+.tsw.open .tsw-d{pointer-events:auto}
+:root .tsw .tsw-d:focus-visible{outline:2px solid var(--r);outline-offset:6px}
+
+/* кнопка режима без анимаций: обычный круг выше тем */
+:root .tsw .tsw-m{left:7px;bottom:7px;width:34px;height:34px;pointer-events:none}
+.tsw.open .tsw-m{pointer-events:auto}
+:root .tsw .tsw-m:focus-visible{outline:2px solid var(--ac);outline-offset:5px}
+.tsw-m svg{display:block;width:34px;height:34px;overflow:visible;filter:drop-shadow(0 4px 5px rgba(0,0,0,.22))}
+.tsw-m circle{fill:var(--card);stroke:var(--bd);stroke-width:2;transition:fill .2s,stroke .2s}
+.tsw-m .st{fill:var(--tx);stroke:none;transition:fill .2s}
+.tsw-m .sl{display:none;fill:none;stroke:var(--bg);stroke-width:2.4;stroke-linecap:round}
+.tsw-m[aria-pressed="true"] circle{fill:var(--tx);stroke:var(--tx)}
+.tsw-m[aria-pressed="true"] .st{fill:var(--bg)}
+.tsw-m[aria-pressed="true"] .sl{display:block}
+
+.tsw-d .lbl,.tsw-m .lbl{position:absolute;left:calc(100% + 22px);top:50%;transform:translate(-6px,-50%);padding:3px 9px;border:1px solid var(--bd);border-radius:999px;background:var(--card);color:var(--tx);font-size:12.5px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .2s}
+.tsw-m .lbl{left:calc(100% + 12px)}
+.tsw-d:hover .lbl,.tsw-d:focus-visible .lbl,.tsw-m:hover .lbl,.tsw-m:focus-visible .lbl{opacity:1;transform:translate(0,-50%)}
+
+/* брызги по клику */
+.tsw-fx,.tsw-fx2{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden}
+.tsw-fx{filter:url(#tsw-goo2)}
+.tsw-fx i,.tsw-fx2 svg{position:absolute;will-change:transform,opacity}
+.tsw-fx2 svg{overflow:visible}
+@media (max-width:560px){.tsw{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+
+/* режим без анимаций: фон без частиц, любое движение сводится к мгновенной смене состояния */
+:root[data-motion="off"] #particleBg{display:none}
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}

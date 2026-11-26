@@ -494,37 +494,265 @@
   };
   TS.enhanceSelects();
 
-  /* ---------- Тема ---------- */
-  TS.initTheme = function(){
-    const root = document.documentElement;
-    const btn = document.getElementById('themeBtn');
-    const ORDER = ['light', 'dark', 'amoled'];
-    const ICONS = {
-      light:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  /* ---------- Тема и режим анимаций: плавающий переключатель ---------- */
+  TS.motionOff = () => document.documentElement.dataset.motion === 'off';
+  TS.initTheme = (function(){
+    const KEY = 'tree-theme', MKEY = 'tree-motion', NS = 'http://www.w3.org/2000/svg';
+    const THEMES = [
+      {id:'light',  name:'Светлая', fill:'#faf9f5', ring:'#8f8663', splash:['#3f5f7d', '#3f7a4e', '#7a5470', '#b98a2a']},
+      {id:'dark',   name:'Тёмная',  fill:'#1e2125', ring:'#8fb0cc', splash:['#8fb0cc', '#4b8f5d', '#c093b3', '#d9b266']},
+      {id:'amoled', name:'AMOLED',  fill:'#000000', ring:'#ffffff', splash:['#ffffff', '#7aa2ff', '#4cc27f', '#a98cff']}
+    ];
+    const INK = {light:'#2a2925', dark:'#e4e7eb', amoled:'#ffffff'};
+    const ICON = {
+      light:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
       dark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
       amoled:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/></svg>'
     };
-    function current(){
-      if(root.dataset.theme) return root.dataset.theme;
-      return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const isOff = TS.motionOff;
+
+    /* ---- клякса: радиальный контур с мягкими лепестками, обводка идёт по всей форме ---- */
+    function Splat(svg, R, nSpike, aMin, aMax, wMin, wMax){
+      const sp = Array.from({length:nSpike}, (_, k) => ({
+        a:(k + rnd(-.35, .35)) / nSpike * 2 * Math.PI, amp:R * rnd(aMin, aMax), w:rnd(wMin || .09, wMax || .17),
+        ph:rnd(0, 6.28), sp:rnd(.7, 1.5), dr:rnd(-.3, .3)
+      }));
+      const har = [2, 3, 5].map(n => ({n, a:R * rnd(.035, .07) * (n === 5 ? .7 : 1), sp:rnd(.7, 1.3) * (Math.random() < .5 ? -1 : 1), ph:rnd(0, 6.28)}));
+      const path = svg.querySelector('path');
+      const N = 112, TAU = Math.PI * 2;
+      this.update = (t, boost) => {
+        let d = '';
+        for(let i = 0; i < N; i++){
+          const th = i / N * TAU;
+          let r = R;
+          for(const h of har) r += h.a * Math.sin(h.n * th + h.ph + t * h.sp);
+          for(const s of sp){
+            let dd = th - (s.a + s.dr * Math.sin(t * .5 + s.ph));
+            dd -= TAU * Math.round(dd / TAU);
+            r += s.amp * boost * (.65 + .35 * Math.sin(t * s.sp + s.ph)) * Math.exp(-dd * dd / (2 * s.w * s.w));
+          }
+          d += (i ? 'L' : 'M') + (Math.cos(th) * r).toFixed(1) + ' ' + (Math.sin(th) * r).toFixed(1);
+        }
+        path.setAttribute('d', d + 'Z');
+      };
+      /* режим без анимаций: обычный статичный круг */
+      this.circle = () => path.setAttribute('d', `M${R} 0A${R} ${R} 0 1 0 ${-R} 0A${R} ${R} 0 1 0 ${R} 0Z`);
     }
-    function paint(){
-      if(!btn) return;
-      const th = current();
-      btn.innerHTML = ICONS[th];
-      btn.title = 'Сменить тему';
+
+    /* ---- брызги ---- */
+    const G = 1500;   /* «гравитация», px/с² */
+    const blobRadius = () => {
+      const r = () => Math.round(rnd(36, 64));
+      return `${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%`;
+    };
+
+    /* капля по баллистической траектории: вытягивается вдоль скорости, после приземления тает */
+    function drop(layer, color, x0, y0, vx, vy, size, delay){
+      const dy = rnd(40, 230);
+      const T = (-vy + Math.sqrt(vy * vy + 2 * G * dy)) / G;
+      const el = document.createElement('i');
+      el.style.cssText = `width:${size}px;height:${size}px;left:${-size / 2}px;top:${-size / 2}px;background:${color};border-radius:50% 50% 50% 50% / 34% 34% 66% 66%`;
+      layer.appendChild(el);
+      const N = 16, frames = [], tail = 500, total = T * 1000 + tail;
+      let end = '';
+      for(let k = 0; k <= N; k++){
+        const f = k / N, t = f * T;
+        const x = x0 + vx * t, y = y0 + vy * t + .5 * G * t * t;
+        const vyc = vy + G * t, sp = Math.hypot(vx, vyc);
+        const ang = Math.atan2(vyc, vx) * 180 / Math.PI - 90;
+        const st = 1 + Math.min(.9, sp / 1100);
+        const sc = (k === 0 ? .45 : 1) * (1 - .45 * Math.pow(f, 3));
+        frames.push({
+          transform:`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${(sc / Math.sqrt(st)).toFixed(3)},${(sc * st).toFixed(3)})`,
+          opacity:1, offset:f * T * 1000 / total
+        });
+        if(k === N) end = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${(sc * .5 / Math.sqrt(st)).toFixed(3)},${(sc * .5).toFixed(3)})`;
+      }
+      frames.push({transform:end, opacity:0, offset:1});
+      el.animate(frames, {duration:total, delay, easing:'linear', fill:'both'});
+      return {x:x0 + vx * T, y:y0 + vy * T + .5 * G * T * T, T};
     }
-    try{
-      const saved = localStorage.getItem('tree-theme');
-      if(ORDER.indexOf(saved) >= 0) root.dataset.theme = saved;
-    }catch(e){}
-    paint();
-    if(btn) btn.addEventListener('click', () => {
-      root.dataset.theme = ORDER[(ORDER.indexOf(current()) + 1) % ORDER.length];
-      try{ localStorage.setItem('tree-theme', root.dataset.theme); }catch(e){}
+
+    /* пятно-клякса со щупальцами: шлёпается, растекается, стекает вниз и тает */
+    function stain(plain, goo, color, x, y, delay){
+      const size = rnd(70, 110);
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '-50 -50 100 100');
+      svg.style.cssText = `width:${size}px;height:${size}px;left:${-size / 2}px;top:${-size / 2}px`;
+      svg.innerHTML = `<path fill="${color}"/>`;
+      new Splat(svg, 20, rnd(8, 11) | 0, .7, 1.25).update(rnd(0, 20), 1);
+      plain.appendChild(svg);
+      const rot = rnd(0, 360);
+      const P = (dy, sx, sy) => `translate(${x}px,${y + dy}px) rotate(${rot}deg) scale(${sx},${sy})`;
+      svg.animate([
+        {transform:P(0, 0, 0), opacity:1},
+        {transform:P(0, 1.3, .55), opacity:1, offset:.14},
+        {transform:P(0, .95, 1.05), opacity:1, offset:.28},
+        {transform:P(10, 1, 1), opacity:.9, offset:.55},
+        {transform:P(34, .6, 1.5), opacity:0}
+      ], {duration:1800, delay, easing:'cubic-bezier(.2,.8,.3,1)', fill:'both'});
+      for(let k = 0; k < 3; k++){
+        const a = rnd(-150, -30) * Math.PI / 180, s = rnd(260, 520);
+        drop(goo, color, x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(8, 11), delay);
+      }
+    }
+
+    function splash(theme, x, y){
+      if(isOff()) return;
+      const layer = document.createElement('div');
+      layer.className = 'tsw-fx';
+      const plain = document.createElement('div');
+      plain.className = 'tsw-fx2';
+      document.body.appendChild(layer);
+      document.body.appendChild(plain);
+      const pal = theme.splash;
+      const burst = document.createElement('i');
+      burst.style.cssText = `width:36px;height:36px;left:-18px;top:-18px;background:${pal[0]};border-radius:${blobRadius()}`;
+      layer.appendChild(burst);
+      burst.animate([
+        {transform:`translate(${x}px,${y}px) scale(.3) rotate(0deg)`, opacity:1},
+        {transform:`translate(${x}px,${y}px) scale(1.9,1.5) rotate(40deg)`, opacity:1, offset:.35},
+        {transform:`translate(${x}px,${y}px) scale(.2) rotate(90deg)`, opacity:0}
+      ], {duration:650, easing:'cubic-bezier(.2,.8,.3,1)', fill:'both'});
+      for(let k = 0; k < 22; k++){
+        const a = rnd(-105, 12) * Math.PI / 180, s = rnd(520, 1150);
+        drop(layer, pal[k % pal.length], x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(8, 15), rnd(0, 140));
+      }
+      for(let k = 0; k < 5; k++){
+        const a = rnd(-100, 0) * Math.PI / 180, s = rnd(700, 1250);
+        const d = rnd(0, 120), color = pal[(k + 1) % pal.length];
+        const end = drop(layer, color, x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(13, 18), d);
+        stain(plain, layer, color, end.x, end.y, d + end.T * 1000);
+      }
+      [layer, plain].forEach(l => l.animate([{opacity:1}, {opacity:0}], {duration:700, delay:3100, easing:'ease-in', fill:'forwards'}));
+      setTimeout(() => { layer.remove(); plain.remove(); }, 3850);
+    }
+
+    return function(){
+      const root = document.documentElement;
+      const get = id => THEMES.find(t => t.id === id) || THEMES[0];
+      const current = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+      /* сохранённые настройки; без них режим «без анимаций» включается, если так просит система */
+      try{ const saved = localStorage.getItem(KEY); if(THEMES.some(t => t.id === saved)) root.dataset.theme = saved; }catch(e){}
+      let sm = null;
+      try{ sm = localStorage.getItem(MKEY); }catch(e){}
+      root.dataset.motion = (sm ? sm === 'off' : matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'off' : 'on';
+
+      /* SVG-фильтр «gooey» для летящих капель */
+      const defs = document.createElement('div');
+      defs.innerHTML = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="tsw-goo2" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/></filter></defs></svg>';
+      document.body.appendChild(defs.firstChild);
+
+      const SVG = '<svg class="sp" viewBox="-36 -36 72 72" aria-hidden="true"><path/></svg>';
+      const MOTION_SLOT = `<div class="tsw-slot" style="--up:244;--dl:165ms"><button type="button" class="tsw-m" aria-label="Режим без анимаций" aria-pressed="false"><svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15"/><path class="st" d="M17 8c.8 5 3.2 7.4 8 9-4.8 1.6-7.2 4-8 9-.8-5-3.2-7.4-8-9 4.8-1.6 7.2-4 8-9z"/><path class="sl" d="M9 25L25 9"/></svg><span class="lbl"></span></button></div>`;
+      const box = document.createElement('div');
+      box.className = 'tsw';
+      box.innerHTML = `<button type="button" class="tsw-main" aria-haspopup="true" aria-expanded="false" aria-label="Тема оформления">${SVG}<span class="ic"></span></button>`
+        + THEMES.map((t, i) => `<div class="tsw-slot" style="--up:${64 + i * 56};--dl:${i * 55}ms"><button type="button" class="tsw-d" data-t="${t.id}" aria-label="${t.name}" style="--f:${t.fill};--r:${t.ring}">${SVG}<span class="lbl">${t.name}</span></button></div>`).join('')
+        + MOTION_SLOT;
+      document.body.appendChild(box);
+      const main = box.querySelector('.tsw-main');
+      const icon = main.querySelector('.ic');
+      const drops = Array.from(box.querySelectorAll('.tsw-d'));
+      const mbtn = box.querySelector('.tsw-m');
+
+      function paint(){
+        const th = current(), T = get(th);
+        icon.innerHTML = ICON[th];
+        box.style.setProperty('--mf', T.fill);
+        box.style.setProperty('--mr', T.ring);
+        box.style.setProperty('--mi', INK[th]);
+        drops.forEach(d => d.setAttribute('aria-pressed', String(d.dataset.t === th)));
+      }
+      function paintMotion(){
+        const off = isOff();
+        mbtn.setAttribute('aria-pressed', String(off));
+        mbtn.querySelector('.lbl').textContent = off ? 'У меня СДВГ' : 'У меня нет СДВГ';
+      }
+
+      /* ---- открытие/закрытие ---- */
+      let closeT = 0, liveUntil = 0;
+      const open = v => {
+        clearTimeout(closeT);
+        box.classList.toggle('open', v);
+        main.setAttribute('aria-expanded', String(v));
+        if(!v) liveUntil = performance.now() + 1500;
+      };
+      box.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') open(true); });
+      box.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse'){ clearTimeout(closeT); closeT = setTimeout(() => open(false), 220); } });
+      main.addEventListener('click', () => open(!box.classList.contains('open')));
+      box.addEventListener('focusin', () => open(true));
+      box.addEventListener('focusout', e => { if(!box.contains(e.relatedTarget)) open(false); });
+      document.addEventListener('pointerdown', e => { if(!box.contains(e.target)) open(false); });
+      document.addEventListener('keydown', e => { if(e.key === 'Escape') open(false); });
+
+      /* ---- желе: клякса остаётся на месте и мягко пульсирует по размеру ---- */
+      const jel = [{trig:main, splat:new Splat(main.querySelector('svg'), 19, 10, .06, .12, .50, .85), S:1.05, mouseOnly:true}]
+        .concat(drops.map(d => ({trig:d, splat:new Splat(d.querySelector('svg'), 15, 10, .13, .16, .62, .92), S:1.18})));
+      jel.forEach(it => { Object.assign(it, {s:1, vs:0, hover:false}); it.trig.style.scale = '1'; });
+      const near = (a, b, e) => Math.abs(a - b) < e;
+
+      function hover(it, v){
+        if(it.hover === v || isOff()) return;
+        it.hover = v;
+        it.vs += v ? 1.3 : -.9;
+      }
+      jel.forEach(it => {
+        const own = e => !it.mouseOnly || e.pointerType === 'mouse';
+        it.trig.addEventListener('pointerenter', e => { if(own(e)) hover(it, true); });
+        it.trig.addEventListener('pointerleave', () => hover(it, false));
+        it.trig.addEventListener('focus', () => hover(it, true));
+        it.trig.addEventListener('blur', () => hover(it, false));
+      });
+
+      let raf = 0, last = 0;
+      function loop(now){
+        if(isOff()){ raf = 0; return; }
+        const dt = Math.min(.033, (now - last) / 1000 || .016); last = now;
+        const t = now / 1000;
+        const live = box.classList.contains('open') || now < liveUntil;
+        jel.forEach((it, i) => {
+          const tg = it.hover ? it.S : 1;
+          it.vs += (-200 * (it.s - tg) - 6 * it.vs) * dt;  it.s += it.vs * dt;
+          if(!it.hover && near(it.s, 1, .002) && near(it.vs, 0, .01)){ it.s = 1; it.vs = 0; it.trig.style.scale = '1'; }
+          else it.trig.style.scale = it.s.toFixed(4);
+          if(i === 0 || live) it.splat.update(t, 1 + Math.max(0, it.s - 1) * .5);
+        });
+        raf = requestAnimationFrame(loop);
+      }
+      /* включает или выключает всё движение: живые кляксы или статичные круги */
+      function applyMotion(){
+        paintMotion();
+        if(isOff()){
+          cancelAnimationFrame(raf); raf = 0;
+          jel.forEach(it => { Object.assign(it, {s:1, vs:0, hover:false}); it.trig.style.scale = '1'; it.splat.circle(); });
+        } else if(!raf){ last = performance.now(); raf = requestAnimationFrame(loop); }
+      }
+      mbtn.addEventListener('click', () => {
+        const off = !isOff();
+        root.dataset.motion = off ? 'off' : 'on';
+        try{ localStorage.setItem(MKEY, off ? 'off' : 'on'); }catch(e){}
+        applyMotion();
+      });
+
+      /* ---- выбор темы ---- */
+      drops.forEach(d => d.addEventListener('click', () => {
+        const theme = get(d.dataset.t);
+        const r = d.getBoundingClientRect();
+        root.dataset.theme = theme.id;
+        try{ localStorage.setItem(KEY, theme.id); }catch(e){}
+        paint();
+        splash(theme, r.left + r.width / 2, r.top + r.height / 2);
+        open(false);
+      }));
+
       paint();
-    });
-  };
+      applyMotion();
+      new MutationObserver(paint).observe(root, {attributes:true, attributeFilter:['data-theme']});
+    };
+  })();
   TS.initTheme();
 
   /* ---------- Позиция курсора для подсветки краёв стекла ---------- */
@@ -542,7 +770,7 @@
     }
     function apply(){
       raf = 0;
-      if(root.dataset.theme !== 'amoled'){ clear(); return; }
+      if(root.dataset.theme !== 'amoled' || root.dataset.motion === 'off'){ clear(); return; }
       if(!els) els = Array.from(document.querySelectorAll(SEL));
       const next = new Set();
       for(const el of els){
@@ -617,7 +845,7 @@
         if(host){ host.remove(); host = null; }
         document.querySelectorAll('.hero').forEach(el => { el.style.backdropFilter = ''; el.style.webkitBackdropFilter = ''; });
         /* фильтр преломления дорогой: нужен только в AMOLED и только с мышью */
-        if(document.documentElement.dataset.theme !== 'amoled' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+        if(document.documentElement.dataset.theme !== 'amoled' || document.documentElement.dataset.motion === 'off' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
         const NS = 'http://www.w3.org/2000/svg';
         host = document.createElementNS(NS, 'svg');
         host.setAttribute('width', '0');
@@ -668,13 +896,12 @@
       rt = setTimeout(build, 250);
     });
     new MutationObserver(() => { clearTimeout(rt); rt = setTimeout(build, 50); })
-      .observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+      .observe(document.documentElement, {attributes:true, attributeFilter:['data-theme', 'data-motion']});
   };
   TS.initLiquidGlass();
 
   /* ---------- Динамический фон из частиц ---------- */
   TS.initParticles = function(){
-    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const canvas = document.createElement('canvas');
     canvas.id = 'particleBg';
     canvas.setAttribute('aria-hidden', 'true');
@@ -740,7 +967,9 @@
     const MAGNET = 80, K = .014, DAMP = .085, WANDER = .03, DRAG = .968, MAXV = 18, JITTER = .04, BOOST = 2.5;
 
     let last = performance.now();
+    let running = false;
     function frame(t){
+      if(document.documentElement.dataset.motion === 'off'){ ctx.clearRect(0, 0, W, H); running = false; return; }
       if(t - last < MINFRAME){ requestAnimationFrame(frame); return; }
       const dt = Math.min(2.5, Math.max(.2, (t - last) / 16.667));
       last = t;
@@ -786,7 +1015,13 @@
       ctx.globalAlpha = 1;
       requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    function startParticles(){
+      if(running || document.documentElement.dataset.motion === 'off') return;
+      running = true; last = performance.now();
+      requestAnimationFrame(frame);
+    }
+    startParticles();
+    new MutationObserver(startParticles).observe(document.documentElement, {attributes:true, attributeFilter:['data-motion']});
     TS._particles = parts;
   };
   TS.initParticles();
