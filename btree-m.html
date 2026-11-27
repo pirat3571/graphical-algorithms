@@ -97,7 +97,7 @@
 
   function findIndex(n, key){
     let i = 0;
-    while(i < n.keys.length && key > n.keys[i]) i++;
+    while(i < n.keys.length && S.cmp(key, n.keys[i]) > 0) i++;
     return i;
   }
   function contains(n, key){

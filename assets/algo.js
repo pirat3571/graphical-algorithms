@@ -8,7 +8,7 @@
   TS.code = function(ch){
     const s = String(ch);
     if(TS.numMode) return parseInt(s, 10) || 0;
-    return s.codePointAt(0) || 0;
+    return TS.collate(s);
   };
 
   /* Разбор строки в массив символов. Для сортировок повторы разрешены. */

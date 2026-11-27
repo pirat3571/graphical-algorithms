@@ -72,7 +72,7 @@
 
   function build(){
     const parsed = S.parseKeys($('inp').value, 19);
-    keys = parsed.keys.slice().sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
+    keys = parsed.keys.slice().sort((a, b) => S.cmp(a, b));
     seq = 0; root = null;
     const steps = [];
     if(!keys.length){
