@@ -6,6 +6,13 @@
 <title>Кодирование — Шеннон, Фано, Хаффман, Гилберт-Мур</title>
 <link rel="stylesheet" href="assets/style.css">
     <link rel="icon" href="assets/favicon.ico">
+<style>
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.2;font-size:15px}
+.fr i{font-style:normal;padding:0 5px}
+.fr i:first-child{border-bottom:1.5px solid currentColor}
+table.ctable td.fq{padding:4px 12px}
+table.ctable td.sy{text-align:left;white-space:normal;font-size:13px}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -340,8 +347,8 @@
     if(k === 'arith') return /^Символ/.test(t) ? ['loop', 'read', 'upd'] : /^Идея|^Интервалы/.test(t) ? ['init'] : /^Сколько бит/.test(t) ? ['bits'] : /^Код сообщения/.test(t) ? ['bits2'] : [];
     if(k === 'arithDec') return /^Что получает/.test(t) ? ['init'] : /^Символ/.test(t) ? ['loop', 'find', 'out'] : [];
     if(k === 'treeDec') return /^Что получает/.test(t) ? ['init'] : /^Символ/.test(t) ? ['loop', 'read', 'walk', 'leaf'] : [];
-    if(k === 'shannon') return /^Длина слова/.test(t) ? ['q', 'len'] : /^Кодовое слово/.test(t) ? ['bits'] : [];
-    if(k === 'gm') return /^Длина слова/.test(t) ? ['init', 'len'] : /^Кодовое слово/.test(t) ? ['code'] : [];
+    if(k === 'shannon') return /^Длина слова|^Степени/.test(t) ? ['q', 'len'] : /^Кодовое слово/.test(t) ? ['bits'] : [];
+    if(k === 'gm') return /^Длина слова|^Степени/.test(t) ? ['init', 'len'] : /^Кодовое слово/.test(t) ? ['code'] : [];
     if(k === 'fano') return /^Делим/.test(t) ? ['sig', 'med', 'med2'] : /^Биты/.test(t) ? ['assign'] : /^Таблица/.test(t) ? ['rec'] : [];
     if(k === 'huffman') return /^Исходный список/.test(t) ? ['sig'] : /^Шаг/.test(t) ? ['sum', 'up', 'rec'] : /^Раздаём биты: последний/.test(t) ? ['base', 'down'] : /^Раздаём/.test(t) ? ['down'] : [];
     return [];
@@ -761,6 +768,30 @@
     }
   }
 
+  /* визуальная дробь 1/2^k: числитель над чертой, знаменатель под ней */
+  const frac = k => k <= 0 ? '<b>1</b>' : `<span class="fr"><i>1</i><i>2<sup>${k}</sup></i></span>`;
+  /* таблица степеней двойки: в какую строку попала вероятность каждого символа, та и даёт длину слова */
+  function powersStep(list, mode){
+    const off = mode === 'gm' ? 1 : 0;   /* у Гилберта-Мура в дроби показатель L−1 */
+    const Ls = list.map(e => e.l);
+    const lMin = Math.min(1, Math.min.apply(null, Ls)), lMax = Math.max.apply(null, Ls);
+    const pMin = Math.min.apply(null, list.map(e => e.p));
+    const ex = off ? '1/2<sup>L−1</sup>' : '1/2<sup>L</sup>';
+    let h = `<div class="ctable-wrap"><table class="ctable"><thead><tr><th>L</th><th>${ex}</th><th>значение</th><th>символы</th></tr></thead><tbody>`;
+    for(let L = lMin; L <= lMax; L++){
+      const hit = list.filter(e => e.l === L);
+      h += `<tr><td>${L}</td><td class="fq">${frac(L - off)}</td><td>${Math.pow(2, -(L - off))}</td>`
+        + `<td class="sy">${hit.length ? hit.map(e => `«<b>${esc(e.ch)}</b>» (${f2(e.p)})`).join(', ') : '—'}</td></tr>`;
+    }
+    h += '</tbody></table></div>';
+    const last = Math.pow(2, -(lMax - off));
+    steps.push({
+      title:'Степени двойки: подбор длины',
+      text:`Длину слова L можно найти без логарифма: выписываем ${ex} для L = ${lMin}, ${lMin + 1}, … и смотрим, в какой строке стоит p символа. ${off ? 'Нужна строка, где 1/2<sup>L−1</sup> ≤ p &lt; 1/2<sup>L−2</sup>.' : 'Нужна строка, где 1/2<sup>L</sup> ≤ p &lt; 1/2<sup>L−1</sup>.'} Останавливаемся на L = ${lMax}: там ${last} — уже не больше наименьшей вероятности p = ${f2(pMin)}.<span class="l">В последнем столбце — символы, у которых получилась такая длина.</span>`,
+      html:h
+    });
+  }
+
   function treeStep(list, text){
     steps.push({title:'Кодовое дерево', text, html:treeHTML(trie(list)), tree:true});
   }
@@ -959,6 +990,7 @@
     shannon(){
       const c = ALL.shannon;
       introSteps('sort');
+      powersStep(c.list, 'sh');
       c.list.forEach((e, k) => {
         steps.push({
           title:`Длина слова для «${e.ch}»`,
@@ -978,6 +1010,7 @@
     gm(){
       const c = ALL.gm;
       introSteps('alpha');
+      powersStep(c.list, 'gm');
       c.list.forEach((e, k) => {
         steps.push({
           title:`Длина слова для «${e.ch}»`,
