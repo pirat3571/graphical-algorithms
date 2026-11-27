@@ -200,7 +200,7 @@
       let t = root, path = [], cmp = [], duplicate = false;
       while(true){
         if(ch === t.d){ duplicate = true; break; }
-        const dir = ch < t.d ? -1 : 1;
+        const dir = S.cmp(ch, t.d) < 0 ? -1 : 1;
         cmp.push(`${S.esc(ch)} ${dir < 0 ? '&lt;' : '&gt;'} ${S.esc(t.d)} → ${dir < 0 ? 'влево' : 'вправо'}`);
         path.push({n:t, dir});
         const next = dir < 0 ? t.l : t.r;
@@ -216,7 +216,7 @@
         continue;
       }
 
-      const dir = ch < t.d ? -1 : 1;
+      const dir = S.cmp(ch, t.d) < 0 ? -1 : 1;
       const node = mk(ch);
       if(dir < 0) t.l = node; else t.r = node;
 

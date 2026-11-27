@@ -140,7 +140,7 @@
           {newId:p.id, code:[...ct, 'null', 'new']});
         return;
       }
-      const left = D < p.d, P = esc(p.d);
+      const left = S.cmp(D, p.d) < 0, P = esc(p.d);
       cmp.push(`${esc(D)} ${left ? '&lt;' : '&gt;'} ${P} → ${left ? 'влево' : 'вправо'}`);
       ct.push(left ? 'cmpL' : 'cmpR', left ? 'recL' : 'recR');
       ins(left ? p.l : p.r, n => { if(left) p.l = n; else p.r = n; });

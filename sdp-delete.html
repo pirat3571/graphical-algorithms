@@ -127,7 +127,7 @@
       let t = root, duplicate = false;
       while(true){
         if(ch === t.d){ duplicate = true; break; }
-        const dir = ch < t.d ? -1 : 1;
+        const dir = S.cmp(ch, t.d) < 0 ? -1 : 1;
         const next = dir < 0 ? t.l : t.r;
         if(!next){
           const n = mk(ch);
@@ -143,7 +143,7 @@
   function removeKey(key){
     let t = root, path = [], cmp = [];
     while(t && t.d !== key){
-      const dir = key < t.d ? -1 : 1;
+      const dir = S.cmp(key, t.d) < 0 ? -1 : 1;
       cmp.push(`${S.esc(key)} ${dir < 0 ? '&lt;' : '&gt;'} ${S.esc(t.d)} → ${dir < 0 ? 'влево' : 'вправо'}`);
       path.push({n:t, dir});
       t = dir < 0 ? t.l : t.r;

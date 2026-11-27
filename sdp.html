@@ -104,7 +104,7 @@
       let t = root, path = [], cmp = [], duplicate = false, tg = [];
       while(true){
         if(ch === t.d){ duplicate = true; break; }
-        const dir = ch < t.d ? -1 : 1;
+        const dir = S.cmp(ch, t.d) < 0 ? -1 : 1;
         cmp.push(`${S.esc(ch)} ${dir < 0 ? '&lt;' : '&gt;'} ${S.esc(t.d)} → ${dir < 0 ? 'влево' : 'вправо'}`);
         path.push(t.id); tg.push(dir < 0 ? 'cmpL' : 'cmpR', dir < 0 ? 'recL' : 'recR');
         const next = dir < 0 ? t.l : t.r;
@@ -121,7 +121,7 @@
         });
         continue;
       }
-      const dir = ch < t.d ? -1 : 1;
+      const dir = S.cmp(ch, t.d) < 0 ? -1 : 1;
       const n = mk(ch);
       if(dir < 0) t.l = n; else t.r = n;
       inserts++;

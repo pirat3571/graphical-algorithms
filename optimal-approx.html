@@ -156,7 +156,7 @@
     const x = wt.map(Number);
     if(x.some(v => !Number.isFinite(v) || v < 0)) return {error:'Веса должны быть неотрицательными числами.'};
     const numeric = kt.every(t => /^-?\d+(\.\d+)?$/.test(t));
-    const pairs = kt.map((k, i) => ({k, w:x[i]})).sort((a, b) => numeric ? a.k - b.k : (a.k < b.k ? -1 : a.k > b.k ? 1 : 0));
+    const pairs = kt.map((k, i) => ({k, w:x[i]})).sort((a, b) => numeric ? a.k - b.k : S.cmp(a.k, b.k));
     return {keys:pairs.map(p => p.k), w:pairs.map(p => p.w)};
   }
 

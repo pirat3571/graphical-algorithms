@@ -15,6 +15,24 @@
     }
     return pool.slice(0, n).join(o.sep || '');
   };
+  /* Порядок символов для сравнения: в русском алфавите Ё стоит между Е и Ж (в Юникоде она раньше А) */
+  TS.collate = ch => {
+    const c = String(ch).codePointAt(0) || 0;
+    if(c === 0x401) return 0x416;
+    if(c >= 0x416 && c <= 0x42F) return c + 1;
+    if(c === 0x451) return 0x437;
+    if(c >= 0x430 && c <= 0x435) return c + 1;
+    if(c >= 0x436 && c <= 0x44F) return c + 2;
+    return c;
+  };
+  TS.cmp = (a, b) => {
+    const x = [...String(a)], y = [...String(b)];
+    for(let i = 0; i < Math.min(x.length, y.length); i++){
+      const d = TS.collate(x[i]) - TS.collate(y[i]);
+      if(d) return d;
+    }
+    return x.length - y.length;
+  };
   TS.fmtBal = b => b > 0 ? '+' + b : b < 0 ? '−' + (-b) : '0';
 
   TS.height = function height(n){
