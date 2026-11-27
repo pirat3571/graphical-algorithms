@@ -511,6 +511,7 @@
     };
     const rnd = (a, b) => a + Math.random() * (b - a);
     const isOff = TS.motionOff;
+    let live = 0;   /* сколько элементов брызг сейчас летает: нужно, чтобы не перегрузить страницу */
 
     /* ---- клякса: радиальный контур с мягкими лепестками, обводка идёт по всей форме ---- */
     function Splat(svg, R, nSpike, aMin, aMax, wMin, wMax){
@@ -570,7 +571,8 @@
         if(k === N) end = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${ang.toFixed(1)}deg) scale(${(sc * .5 / Math.sqrt(st)).toFixed(3)},${(sc * .5).toFixed(3)})`;
       }
       frames.push({transform:end, opacity:0, offset:1});
-      el.animate(frames, {duration:total, delay, easing:'linear', fill:'both'});
+      const an = el.animate(frames, {duration:total, delay, easing:'linear', fill:'both'});
+      live++; an.onfinish = () => { el.remove(); live--; };
       return {x:x0 + vx * T, y:y0 + vy * T + .5 * G * T * T, T};
     }
 
@@ -585,48 +587,60 @@
       plain.appendChild(svg);
       const rot = rnd(0, 360);
       const P = (dy, sx, sy) => `translate(${x}px,${y + dy}px) rotate(${rot}deg) scale(${sx},${sy})`;
-      svg.animate([
+      const sa = svg.animate([
         {transform:P(0, 0, 0), opacity:1},
         {transform:P(0, 1.3, .55), opacity:1, offset:.14},
         {transform:P(0, .95, 1.05), opacity:1, offset:.28},
         {transform:P(10, 1, 1), opacity:.9, offset:.55},
         {transform:P(34, .6, 1.5), opacity:0}
       ], {duration:1800, delay, easing:'cubic-bezier(.2,.8,.3,1)', fill:'both'});
+      live++; sa.onfinish = () => { svg.remove(); live--; };
       for(let k = 0; k < 3; k++){
         const a = rnd(-150, -30) * Math.PI / 180, s = rnd(260, 520);
         drop(goo, color, x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(8, 11), delay);
       }
     }
 
-    function splash(theme, x, y){
+    /* два общих слоя для всех брызг: создаются при первом всплеске и убираются, когда брызги закончились */
+    let layers = null, cleanT = 0;
+    function getLayers(){
+      if(!layers){
+        const layer = document.createElement('div'), plain = document.createElement('div');
+        layer.className = 'tsw-fx'; plain.className = 'tsw-fx2';
+        document.body.appendChild(layer); document.body.appendChild(plain);
+        layers = {layer, plain};
+      }
+      clearTimeout(cleanT);
+      cleanT = setTimeout(() => { layers.layer.remove(); layers.plain.remove(); layers = null; }, 5000);
+      return layers;
+    }
+
+    function splash(theme, x, y, o){
       if(isOff()) return;
-      const layer = document.createElement('div');
-      layer.className = 'tsw-fx';
-      const plain = document.createElement('div');
-      plain.className = 'tsw-fx2';
-      document.body.appendChild(layer);
-      document.body.appendChild(plain);
+      o = o || {};
+      if(o.limit && live > o.limit) return;
+      const {layer, plain} = getLayers();
       const pal = theme.splash;
       const burst = document.createElement('i');
       burst.style.cssText = `width:36px;height:36px;left:-18px;top:-18px;background:${pal[0]};border-radius:${blobRadius()}`;
       layer.appendChild(burst);
-      burst.animate([
+      const ba = burst.animate([
         {transform:`translate(${x}px,${y}px) scale(.3) rotate(0deg)`, opacity:1},
         {transform:`translate(${x}px,${y}px) scale(1.9,1.5) rotate(40deg)`, opacity:1, offset:.35},
         {transform:`translate(${x}px,${y}px) scale(.2) rotate(90deg)`, opacity:0}
       ], {duration:650, easing:'cubic-bezier(.2,.8,.3,1)', fill:'both'});
-      for(let k = 0; k < 22; k++){
+      ba.onfinish = () => burst.remove();
+      const nDrops = o.drops === undefined ? 22 : o.drops, nBig = o.big === undefined ? 5 : o.big;
+      for(let k = 0; k < nDrops; k++){
         const a = rnd(-105, 12) * Math.PI / 180, s = rnd(520, 1150);
         drop(layer, pal[k % pal.length], x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(8, 15), rnd(0, 140));
       }
-      for(let k = 0; k < 5; k++){
+      for(let k = 0; k < nBig; k++){
         const a = rnd(-100, 0) * Math.PI / 180, s = rnd(700, 1250);
         const d = rnd(0, 120), color = pal[(k + 1) % pal.length];
         const end = drop(layer, color, x, y, Math.cos(a) * s, Math.sin(a) * s, rnd(13, 18), d);
         stain(plain, layer, color, end.x, end.y, d + end.T * 1000);
       }
-      [layer, plain].forEach(l => l.animate([{opacity:1}, {opacity:0}], {duration:700, delay:3100, easing:'ease-in', fill:'forwards'}));
-      setTimeout(() => { layer.remove(); plain.remove(); }, 3850);
     }
 
     return function(){
@@ -682,7 +696,27 @@
       };
       box.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') open(true); });
       box.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse'){ clearTimeout(closeT); closeT = setTimeout(() => open(false), 220); } });
-      main.addEventListener('click', () => open(!box.classList.contains('open')));
+      /* если кликать по кнопке быстро дольше 5 секунд */
+      let streakStart = 0, lastClick = 0, eggUntil = 0, eggTimer = 0;
+      const eggSplash = () => {
+        const r = main.getBoundingClientRect();
+        splash(THEMES[Math.floor(Math.random() * THEMES.length)], r.left + r.width / 2, r.top + r.height / 2, {drops:22, big:5, limit:700});
+      };
+      main.addEventListener('click', () => {
+        const now = performance.now();
+        if(now - lastClick > 400) streakStart = now;   /* пауза дольше 0,6 с обрывает серию */
+        lastClick = now;
+        if(now - streakStart >= 3000){
+          eggUntil = now + 1000;
+          eggSplash();
+          if(!eggTimer) eggTimer = setInterval(() => {
+            if(performance.now() > eggUntil){ clearInterval(eggTimer); eggTimer = 0; return; }
+            eggSplash();
+          }, 110);
+          return;
+        }
+        open(!box.classList.contains('open'));
+      });
       box.addEventListener('focusin', () => open(true));
       box.addEventListener('focusout', e => { if(!box.contains(e.relatedTarget)) open(false); });
       document.addEventListener('pointerdown', e => { if(!box.contains(e.target)) open(false); });
