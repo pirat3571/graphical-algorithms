@@ -346,7 +346,7 @@
       if(opts.onStep) opts.onStep(s, api);
       requestAnimationFrame(() => {
         const extra = canvas.scrollWidth - canvas.clientWidth;
-        if(extra > 8) canvas.scrollLeft = extra / 2;
+        if(extra > 8) canvas.scrollLeft = s.focus !== undefined ? Math.max(0, Math.min(extra, s.focus - canvas.clientWidth / 2)) : extra / 2;
       });
     }
 

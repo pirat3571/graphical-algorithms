@@ -685,6 +685,12 @@
     return `<div class="tree-host"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Кодовое дерево">${edges}${nodes}</svg></div>`;
   }
 
+  /* x-координата места действия на схеме Хаффмана: плеер прокручивает к ней, а не к центру */
+  const procFocus = (upto, lblFrom) => {
+    const X = c => 64 + c * 150;
+    if(lblFrom < 1e9) return X(lblFrom) + 70;
+    return upto ? (X(upto - 1) + X(upto)) / 2 + 30 : X(0);
+  };
   /* процесс построения кода Хаффмана: столбцы списков, скобки, синие стрелки сумм, красные коды */
   function procSVG(Hf, upto, lblFrom){
     const M = Hf.merges.length, n = Hf.stages[0].length;
@@ -1027,20 +1033,20 @@
         steps.push({
           title:'Исходный список',
           text:`Выписываем вероятности по убыванию. Дальше две последние (наименьшие) складываем, а сумму ставим в список на своё место.`,
-          html:procSVG(c, 0, 1e9), tree:true
+          html:procSVG(c, 0, 1e9), focus:procFocus(0, 1e9), tree:true
         });
         c.merges.forEach((m, i) => {
           steps.push({
             title:`Шаг ${i + 1}: слияние двух наименьших`,
             text:`Две наименьшие вероятности — ${label(m.a)} и ${label(m.b)}. Складываем: ${f2(nd(m.a).p)} + ${f2(nd(m.b).p)} = <b>${f2(nd(m.m).p)}</b>. Сумма встаёт в список ниже равных по величине, список остаётся упорядоченным по убыванию. Скобка объединяет слагаемые, синяя стрелка ведёт к сумме.`,
-            html:procSVG(c, i + 1, 1e9), tree:true
+            html:procSVG(c, i + 1, 1e9), focus:procFocus(i + 1, 1e9), tree:true
           });
         });
         for(let b = M; b >= 0; b--){
           const text = b === M
             ? `В списке осталось два элемента: верхнему приписываем <b>0</b>, нижнему <b>1</b>. Это самые короткие префиксы.`
             : `Возвращаемся на шаг ${b + 1}: сумма ${f2(nd(c.merges[b].m).p)} с кодом <b class="cw">${nd(c.merges[b].m).code}</b> состоит из двух слагаемых. Верхнему дописываем 0, нижнему 1: <b class="cw">${nd(c.merges[b].a).code}</b> и <b class="cw">${nd(c.merges[b].b).code}</b>.`;
-          steps.push({title:b === M ? 'Раздаём биты: последний столбец' : `Раздаём биты: столбец ${b + 1}`, text, html:procSVG(c, M, b), tree:true});
+          steps.push({title:b === M ? 'Раздаём биты: последний столбец' : `Раздаём биты: столбец ${b + 1}`, text, html:procSVG(c, M, b), focus:procFocus(M, b), tree:true});
         }
       }
       steps.push({
