@@ -581,7 +581,7 @@
         return c;
       };
       const tc = draw(200);
-      const blob = await encode(draw(2000), .85), thumb = await encode(tc, .8);
+      const blob = await encode(draw(2000), .90), thumb = await encode(tc, .8);
       const lum = lumOf(tc);
       if(bmp.close) bmp.close();
       if(!blob || !thumb) throw new Error('encode');
@@ -969,7 +969,7 @@
       fileIn.style.display = 'none';
       box.appendChild(fileIn);
 
-      const SL = [['dim', 'Затемнение / засветление', -90, 90], ['card', 'Прозрачность карточек', 0, 90], ['btn', 'Прозрачность кнопок и полей', 0, 90]];      const panel = document.createElement('div');
+      const SL = [['dim', 'Затемнение / засветление', -90, 90], ['card', 'Прозрачность карточек', 0, 100], ['btn', 'Прозрачность кнопок и полей', 0, 100]];      const panel = document.createElement('div');
       panel.className = 'bgp';
       panel.setAttribute('role', 'dialog');
       panel.setAttribute('aria-label', 'Свой фон');
