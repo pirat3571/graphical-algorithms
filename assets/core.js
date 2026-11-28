@@ -512,6 +512,86 @@
   };
   TS.enhanceSelects();
 
+    /* ---------- Свой фон: фото пользователя хранится в IndexedDB ---------- */
+  TS.initUserBg = function(){
+    const DB = 'tree-site', ST = 'kv', KEY = 'bg', FLAG = 'tree-bg';
+    const root = document.documentElement;
+    const layer = document.createElement('div');
+    layer.id = 'userBg';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.insertBefore(layer, document.body.firstChild);
+    let url = null;
+
+    const openDB = () => new Promise((res, rej) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(ST);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    const tx = async (mode, fn) => {
+      const db = await openDB();
+      return new Promise((res, rej) => {
+        const t = db.transaction(ST, mode);
+        const q = fn(t.objectStore(ST));
+        t.oncomplete = () => { db.close(); res(q && q.result); };
+        t.onerror = t.onabort = () => { db.close(); rej(t.error); };
+      });
+    };
+
+    function apply(blob){
+      if(url){ URL.revokeObjectURL(url); url = null; }
+      if(blob){
+        url = URL.createObjectURL(blob);
+        layer.style.backgroundImage = `url("${url}")`;
+        root.dataset.bg = 'on';
+      } else {
+        layer.style.backgroundImage = '';
+        delete root.dataset.bg;
+      }
+      document.dispatchEvent(new Event('tsbg'));
+    }
+
+    /* уменьшаем до 2000 px и пересжимаем в JPEG */
+    async function shrink(file){
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+            const pick = async type => {
+        const b = await new Promise(r => c.toBlob(r, type, .90));
+        return b && b.type === type ? b : null;   /* браузер без поддержки молча отдаёт PNG */
+      };
+      return (await pick('image/webp')) || (await pick('image/jpeg'));
+    }
+
+    TS.userBg = {
+      has: () => !!url,
+      async set(file){
+        try{
+          const blob = await shrink(file);
+          await tx('readwrite', s => s.put(blob, KEY));
+          try{ localStorage.setItem(FLAG, '1'); }catch(e){}
+          apply(blob);
+        }catch(e){
+          alert('Не удалось загрузить это изображение. Попробуйте JPG или PNG.');
+        }
+      },
+      async clear(){
+        try{ await tx('readwrite', s => s.delete(KEY)); }catch(e){}
+        try{ localStorage.removeItem(FLAG); }catch(e){}
+        apply(null);
+      }
+    };
+
+    /* при открытии страницы достаём сохранённое фото (флаг в localStorage — чтобы зря не открывать базу) */
+    let flag = null;
+    try{ flag = localStorage.getItem(FLAG); }catch(e){}
+    if(flag) tx('readonly', s => s.get(KEY)).then(b => { if(b) apply(b); }).catch(() => {});
+  };
+  TS.initUserBg();
+
   /* ---------- Тема и режим анимаций: плавающий переключатель ---------- */
   TS.motionOff = () => document.documentElement.dataset.motion === 'off';
   TS.initTheme = (function(){
@@ -678,17 +758,19 @@
       document.body.appendChild(defs.firstChild);
 
       const SVG = '<svg class="sp" viewBox="-36 -36 72 72" aria-hidden="true"><path/></svg>';
+      const PHOTO_SLOT = `<div class="tsw-slot" style="--up:300;--dl:220ms"><button type="button" class="tsw-m tsw-p" aria-label="Свой фон" aria-pressed="false"><svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15"/><path class="st" d="M9 23l5.5-7 4 5 2.5-3 5.5 5z"/><circle class="st" cx="22" cy="12" r="2"/></svg><span class="lbl"></span></button></div>`;
       const MOTION_SLOT = `<div class="tsw-slot" style="--up:244;--dl:165ms"><button type="button" class="tsw-m" aria-label="Режим без анимаций" aria-pressed="false"><svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15"/><path class="st" d="M17 8c.8 5 3.2 7.4 8 9-4.8 1.6-7.2 4-8 9-.8-5-3.2-7.4-8-9 4.8-1.6 7.2-4 8-9z"/><path class="sl" d="M9 25L25 9"/></svg><span class="lbl"></span></button></div>`;
       const box = document.createElement('div');
       box.className = 'tsw';
       box.innerHTML = `<button type="button" class="tsw-main" aria-haspopup="true" aria-expanded="false" aria-label="Тема оформления">${SVG}<span class="ic"></span></button>`
         + THEMES.map((t, i) => `<div class="tsw-slot" style="--up:${64 + i * 56};--dl:${i * 55}ms"><button type="button" class="tsw-d" data-t="${t.id}" aria-label="${t.name}" style="--f:${t.fill};--r:${t.ring}">${SVG}<span class="lbl">${t.name}</span></button></div>`).join('')
-        + MOTION_SLOT;
+        + MOTION_SLOT + PHOTO_SLOT;
       document.body.appendChild(box);
       const main = box.querySelector('.tsw-main');
       const icon = main.querySelector('.ic');
       const drops = Array.from(box.querySelectorAll('.tsw-d'));
-      const mbtn = box.querySelector('.tsw-m');
+      const mbtn = box.querySelector('.tsw-m:not(.tsw-p)');
+      const pbtn = box.querySelector('.tsw-p');
 
       function paint(){
         const th = current(), T = get(th);
@@ -788,6 +870,27 @@
         try{ localStorage.setItem(MKEY, off ? 'off' : 'on'); }catch(e){}
         applyMotion();
       });
+
+            /* ---- свой фон: клик — выбрать фото, повторный клик — убрать ---- */
+      const fileIn = document.createElement('input');
+      fileIn.type = 'file'; fileIn.accept = 'image/*'; fileIn.hidden = true;
+      fileIn.style.display = 'none';
+      box.appendChild(fileIn);
+      function paintBg(){
+        const on = TS.userBg.has();
+        pbtn.setAttribute('aria-pressed', String(on));
+        const t = on ? 'Убрать свой фон' : 'Свой фон';
+        pbtn.setAttribute('aria-label', t);
+        pbtn.querySelector('.lbl').textContent = t;
+      }
+      pbtn.addEventListener('click', () => { if(TS.userBg.has()) TS.userBg.clear(); else fileIn.click(); });
+      fileIn.addEventListener('change', async () => {
+        const f = fileIn.files[0];
+        fileIn.value = '';
+        if(f) await TS.userBg.set(f);
+      });
+      document.addEventListener('tsbg', paintBg);
+      paintBg();
 
       /* ---- выбор темы ---- */
       drops.forEach(d => d.addEventListener('click', () => {

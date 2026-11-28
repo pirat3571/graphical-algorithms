@@ -712,7 +712,7 @@ table.ctable td.out{background:var(--oksoft);box-shadow:inset 0 0 0 1.5px var(--
 /* ---------- Переключатель темы и режим без анимаций ---------- */
 .tsw{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:48px;height:48px;z-index:55}
 .tsw::before{content:"";position:absolute;left:-8px;right:-8px;bottom:0;height:0}
-.tsw.open::before{height:310px}
+.tsw.open::before{height:366px}
 
 :root .tsw button{position:absolute;padding:0;min-height:0;border:0;background:transparent;box-shadow:none;border-radius:50%;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
 :root .tsw button::after{display:none}
@@ -761,6 +761,17 @@ table.ctable td.out{background:var(--oksoft);box-shadow:inset 0 0 0 1.5px var(--
 .tsw-fx i,.tsw-fx2 svg{position:absolute;will-change:transform,opacity}
 .tsw-fx2 svg{overflow:visible}
 @media (max-width:560px){.tsw{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+
+/* ---------- Свой фон ---------- */
+#userBg{position:fixed;inset:0;z-index:-2;pointer-events:none;background:center/cover no-repeat;opacity:0;transition:opacity .4s}
+:root[data-bg="on"] #userBg{opacity:1}
+#userBg::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.55}
+:root[data-theme="amoled"] #userBg::after{opacity:.4}
+/* на светлой и тёмной темах карточки чуть прозрачные, чтобы фон был виден, а текст читался */
+:root[data-bg="on"]:not([data-theme="amoled"]) :is(.card,details,.tile,.meter-box,.hero){
+  background:color-mix(in srgb,var(--card) 82%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
 
 /* режим без анимаций: фон без частиц, любое движение сводится к мгновенной смене состояния */
 :root[data-motion="off"] #particleBg{display:none}
