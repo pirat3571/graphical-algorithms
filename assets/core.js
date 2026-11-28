@@ -1078,3 +1078,12 @@
   };
   TS.initParticles();
 })();
+
+(function(){
+  const cs = document.currentScript;
+  if(!cs) return;
+  const s = document.createElement('script');
+  s.src = cs.src.replace(/core\.js(\?.*)?$/, 'feedback.js');
+  s.defer = true;
+  document.head.appendChild(s);
+})();
