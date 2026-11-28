@@ -885,7 +885,7 @@ table.ctable td.out{background:var(--oksoft);box-shadow:inset 0 0 0 1.5px var(--
 /* ---------- Переключатель темы и режим без анимаций ---------- */
 .tsw{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:48px;height:48px;z-index:55}
 .tsw::before{content:"";position:absolute;left:-8px;right:-8px;bottom:0;height:0}
-.tsw.open::before{height:310px}
+.tsw.open::before{height:366px}
 
 :root .tsw button{position:absolute;padding:0;min-height:0;border:0;background:transparent;box-shadow:none;border-radius:50%;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible}
 :root .tsw button::after{display:none}
@@ -934,6 +934,57 @@ table.ctable td.out{background:var(--oksoft);box-shadow:inset 0 0 0 1.5px var(--
 .tsw-fx i,.tsw-fx2 svg{position:absolute;will-change:transform,opacity}
 .tsw-fx2 svg{overflow:visible}
 @media (max-width:560px){.tsw{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px))}}
+
+/* ---------- Свой фон ---------- */
+#userBg{position:fixed;inset:0;z-index:-2;pointer-events:none;background:center/cover no-repeat;opacity:0;transition:opacity .4s}
+:root[data-bg="on"] #userBg{opacity:1}
+#userBg::after{content:"";position:absolute;inset:0;background:var(--bg-ov,#000);opacity:var(--bg-dim,.35)}
+/* текст прямо на фоне: цвет по яркости фона (data-bgtone выставляет JS) */
+:root[data-bg="on"][data-bgtone="dark"] :is(main > h1,main > .lead,.section-title,.crumb,footer.note,.pager a){
+  color:#f4f6fa;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+:root[data-bg="on"][data-bgtone="dark"] :is(main > .lead,.crumb,footer.note){color:rgba(244,246,250,.86)}
+:root[data-bg="on"][data-bgtone="light"] :is(main > h1,main > .lead,.section-title,.crumb,footer.note,.pager a){
+  color:#23221e;text-shadow:none}
+:root[data-bg="on"][data-bgtone="light"] :is(main > .lead,.crumb,footer.note){color:#3d3a32}
+
+/* карточки */
+:root[data-bg="on"] :is(.card,details,.tile,.meter-box,.topbar .back){
+  background:color-mix(in srgb,var(--card) var(--bg-card,100%),transparent)}
+:root[data-bg="on"] .hero{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--card) var(--bg-card,100%),transparent),color-mix(in srgb,var(--acsoft) var(--bg-card,100%),transparent))}
+:root[data-bg="on"]:not([data-theme="amoled"]) :is(.card,details,.tile,.meter-box,.hero,.topbar .back){
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+
+/* кнопки и поля (акцентные, ответы теста и переключатель тем не трогаем) */
+:root[data-bg="on"] button:not(.p,.on,.opt,.pocket-tab,.dd-btn):not(.tsw *,.bgp *,.topbar .back){
+  background-color:color-mix(in srgb,var(--card) var(--bg-btn,100%),transparent)}
+:root[data-bg="on"] :is(input:not([type=checkbox],[type=range]),select,button.dd-btn):not(.num *,.bgp *){
+  background-color:color-mix(in srgb,var(--bg) var(--bg-btn,100%),transparent)}
+
+/* панель настроек фона */
+.bgp{position:fixed;z-index:56;left:calc(76px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 32px);overflow:auto;padding:14px;border:1px solid var(--bd);border-radius:16px;background:var(--bg);color:var(--tx);box-shadow:0 16px 40px rgba(0,0,0,.3);opacity:0;visibility:hidden;transform:translateY(8px) scale(.98);transform-origin:bottom left;transition:opacity .18s,transform .18s,visibility .18s}
+.bgp.open{opacity:1;visibility:visible;transform:none}
+:root[data-theme="amoled"] .bgp{border-color:rgba(255,255,255,.3)}
+.bgp button{min-height:0}
+.bgp-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:15px}
+.bgp-x{padding:2px 9px}
+.bgp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bgp-t{position:relative;aspect-ratio:1;padding:0;border:2px solid var(--bd);border-radius:10px;overflow:hidden;background:var(--node);display:grid;place-items:center;color:var(--mut)}
+.bgp-t.add{border-style:dashed;font-size:24px;line-height:1}
+.bgp-t.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--acsoft)}
+.bgp-pick{position:absolute;inset:0;padding:0;border:0;border-radius:0;background:none}
+.bgp-pick img{display:block;width:100%;height:100%;object-fit:cover}
+.bgp-del{position:absolute;top:3px;right:3px;width:20px;height:20px;padding:0;border:0;border-radius:50%;font-size:11px;line-height:1;background:rgba(0,0,0,.65);color:#fff}
+.bgp-sl{display:grid;gap:6px;margin-top:14px}
+.bgp:not(.has) .bgp-sl{opacity:.45}
+.bgp-r{display:block}
+.bgp-r span{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}
+.bgp-r output{color:var(--tx);font-variant-numeric:tabular-nums}
+.bgp-r .scrub{margin:2px 0 4px}
+.bgp-f{display:flex;flex-direction:column;gap:7px;margin-top:10px;font-size:11.5px;color:var(--mut);line-height:1.4}
+.bgp-f button{align-self:flex-start;font-size:13px;padding:5px 10px}
+@media (max-width:560px){.bgp{left:12px;right:12px;width:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));max-height:calc(100vh - 100px)}}
+@media (prefers-reduced-motion:reduce){.bgp{transition:none}}
 
 /* режим без анимаций: фон без частиц, любое движение сводится к мгновенной смене состояния */
 :root[data-motion="off"] #particleBg{display:none}
