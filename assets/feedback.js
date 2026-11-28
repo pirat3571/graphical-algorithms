@@ -84,7 +84,7 @@ html.fb-lock{overflow:hidden;padding-right:var(--fb-sbw,0px)}
     const main = document.querySelector('main') || document.body;
     const foot = document.createElement('p');
     foot.className = 'fb-foot';
-    foot.innerHTML = 'Нашли ошибку или есть идея? <button type="button" class="fb-link">Написать нам</button>';
+    foot.innerHTML = 'Нашли ошибку или есть идея? <button type="button" class="fb-link">Написать</button>';
     const note = main.querySelector('footer.note');
     if(note) main.insertBefore(foot, note); else main.appendChild(foot);
 
