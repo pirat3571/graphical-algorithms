@@ -512,83 +512,171 @@
   };
   TS.enhanceSelects();
 
-    /* ---------- Свой фон: фото пользователя хранится в IndexedDB ---------- */
+      /* ---------- Свой фон: галерея фото в IndexedDB, настройки в localStorage ---------- */
   TS.initUserBg = function(){
-    const DB = 'tree-site', ST = 'kv', KEY = 'bg', FLAG = 'tree-bg';
+    const DB = 'tree-site', META = 'tree-bg2', OLD = 'tree-bg', MAXN = 12;
+    const DEF = {dim:35, card:18, btn:0};
     const root = document.documentElement;
     const layer = document.createElement('div');
     layer.id = 'userBg';
     layer.setAttribute('aria-hidden', 'true');
     document.body.insertBefore(layer, document.body.firstChild);
+
+    let meta = Object.assign({ids:[], active:null}, DEF);
+    try{ Object.assign(meta, JSON.parse(localStorage.getItem(META) || '{}')); }catch(e){}
+    if(!Array.isArray(meta.ids)) meta.ids = [];
+    const items = new Map();
     let url = null;
+    const saveMeta = () => { try{ localStorage.setItem(META, JSON.stringify(meta)); }catch(e){} };
 
     const openDB = () => new Promise((res, rej) => {
-      const r = indexedDB.open(DB, 1);
-      r.onupgradeneeded = () => r.result.createObjectStore(ST);
+      const r = indexedDB.open(DB, 2);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
+        if(!d.objectStoreNames.contains('imgs')) d.createObjectStore('imgs', {keyPath:'id'});
+      };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
     });
-    const tx = async (mode, fn) => {
+    const tx = async (store, mode, fn) => {
       const db = await openDB();
       return new Promise((res, rej) => {
-        const t = db.transaction(ST, mode);
-        const q = fn(t.objectStore(ST));
+        const t = db.transaction(store, mode);
+        const q = fn(t.objectStore(store));
         t.oncomplete = () => { db.close(); res(q && q.result); };
         t.onerror = t.onabort = () => { db.close(); rej(t.error); };
       });
     };
 
-    function apply(blob){
+    /* WebP, а если браузер его не умеет кодировать, JPEG (иначе toBlob молча отдаёт PNG) */
+    async function encode(c, q){
+      const pick = async type => {
+        const b = await new Promise(r => c.toBlob(r, type, q));
+        return b && b.type === type ? b : null;
+      };
+      return (await pick('image/webp')) || (await pick('image/jpeg'));
+    }
+        const lumOf = src => {
+      const s = document.createElement('canvas');
+      s.width = s.height = 16;
+      const x = s.getContext('2d');
+      x.drawImage(src, 0, 0, 16, 16);
+      const d = x.getImageData(0, 0, 16, 16).data;
+      let t = 0;
+      for(let i = 0; i < d.length; i += 4) t += .2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2];
+      return t / (d.length / 4) / 255;
+    };
+    const lumFromBlob = async b => { const bm = await createImageBitmap(b); const l = lumOf(bm); if(bm.close) bm.close(); return l; };
+
+    /* полноразмерная копия до 2000 px и миниатюра 200 px */
+    async function prep(file){
+      const bmp = await createImageBitmap(file);
+      const draw = max => {
+        const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(bmp.width * k));
+        c.height = Math.max(1, Math.round(bmp.height * k));
+        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+        return c;
+      };
+      const tc = draw(200);
+      const blob = await encode(draw(2000), .85), thumb = await encode(tc, .8);
+      const lum = lumOf(tc);
+      if(bmp.close) bmp.close();
+      if(!blob || !thumb) throw new Error('encode');
+      return {blob, thumb, lum};
+    }
+    const newId = () => 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    async function store(file){
+      const {blob, thumb, lum} = await prep(file), id = newId();
+      await tx('imgs', 'readwrite', s => s.put({id, blob, thumb, lum}));
+      items.set(id, {id, blob, thumb, lum, thumbUrl:URL.createObjectURL(thumb)});
+      meta.ids.push(id);
+      return id;
+    }
+
+    function applyVars(){
+      const it = items.get(meta.active), d = meta.dim / 100;
+      const lum = it && it.lum != null ? it.lum : .4;
+      /* итоговая яркость фона: чёрная подложка (d > 0) гасит, белая (d < 0) засветляет */
+      const eff = d >= 0 ? lum * (1 - d) : lum + (1 - lum) * -d;
+      root.dataset.bgtone = eff < .5 ? 'dark' : 'light';
+      root.style.setProperty('--bg-ov', d >= 0 ? '#000' : '#fff');
+      root.style.setProperty('--bg-dim', Math.abs(d));
+      root.style.setProperty('--bg-card', (100 - meta.card) + '%');
+      root.style.setProperty('--bg-btn', (100 - meta.btn) + '%');
+    }
+
+    function apply(){
       if(url){ URL.revokeObjectURL(url); url = null; }
-      if(blob){
-        url = URL.createObjectURL(blob);
+      const it = items.get(meta.active);
+      if(it){
+        url = URL.createObjectURL(it.blob);
         layer.style.backgroundImage = `url("${url}")`;
         root.dataset.bg = 'on';
       } else {
         layer.style.backgroundImage = '';
         delete root.dataset.bg;
       }
+      applyVars();
       document.dispatchEvent(new Event('tsbg'));
     }
 
-    /* уменьшаем до 2000 px и пересжимаем в JPEG */
-    async function shrink(file){
-      const bmp = await createImageBitmap(file);
-      const k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(bmp.width * k);
-      c.height = Math.round(bmp.height * k);
-      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-            const pick = async type => {
-        const b = await new Promise(r => c.toBlob(r, type, .90));
-        return b && b.type === type ? b : null;   /* браузер без поддержки молча отдаёт PNG */
-      };
-      return (await pick('image/webp')) || (await pick('image/jpeg'));
-    }
-
     TS.userBg = {
-      has: () => !!url,
-      async set(file){
-        try{
-          const blob = await shrink(file);
-          await tx('readwrite', s => s.put(blob, KEY));
-          try{ localStorage.setItem(FLAG, '1'); }catch(e){}
-          apply(blob);
-        }catch(e){
-          alert('Не удалось загрузить это изображение. Попробуйте JPG или PNG.');
+      meta, items, defaults:DEF, max:MAXN,
+      has: () => items.has(meta.active),
+      select(id){ meta.active = id; saveMeta(); apply(); },
+      set(k, v){ meta[k] = v; saveMeta(); applyVars(); },
+      async add(files){
+        let fail = 0;
+        for(const f of files){
+          if(meta.ids.length >= MAXN) break;
+          try{ meta.active = await store(f); }catch(e){ fail++; }
         }
+        saveMeta(); apply();
+        if(fail) alert('Не удалось загрузить часть изображений. Попробуйте JPG, PNG или WebP.');
       },
-      async clear(){
-        try{ await tx('readwrite', s => s.delete(KEY)); }catch(e){}
-        try{ localStorage.removeItem(FLAG); }catch(e){}
-        apply(null);
+      async remove(id){
+        try{ await tx('imgs', 'readwrite', s => s.delete(id)); }catch(e){}
+        const it = items.get(id);
+        if(it) URL.revokeObjectURL(it.thumbUrl);
+        items.delete(id);
+        meta.ids = meta.ids.filter(x => x !== id);
+        if(meta.active === id) meta.active = null;
+        saveMeta(); apply();
       }
     };
 
-    /* при открытии страницы достаём сохранённое фото (флаг в localStorage — чтобы зря не открывать базу) */
-    let flag = null;
-    try{ flag = localStorage.getItem(FLAG); }catch(e){}
-    if(flag) tx('readonly', s => s.get(KEY)).then(b => { if(b) apply(b); }).catch(() => {});
+    async function load(){
+      let old = null;
+      try{ old = localStorage.getItem(OLD); }catch(e){}
+      if(old){   /* перенос единственного фото из прошлой версии */
+        try{
+          const b = await tx('kv', 'readonly', s => s.get('bg'));
+          if(b){ meta.active = await store(b); }
+          await tx('kv', 'readwrite', s => s.delete('bg'));
+        }catch(e){}
+        try{ localStorage.removeItem(OLD); }catch(e){}
+        saveMeta();
+      }
+      if(!meta.ids.length) return;
+      const all = await tx('imgs', 'readonly', s => s.getAll());
+      for(const r of all){
+        if(items.has(r.id)) continue;
+        if(r.lum == null){
+          try{ r.lum = await lumFromBlob(r.thumb); tx('imgs', 'readwrite', s => s.put(r)).catch(() => {}); }catch(e){ r.lum = .4; }
+        }
+        items.set(r.id, Object.assign({}, r, {thumbUrl:URL.createObjectURL(r.thumb)}));
+      }
+      meta.ids = meta.ids.filter(id => items.has(id));
+      if(!items.has(meta.active)) meta.active = null;
+      apply();
+    }
+    applyVars();
+    let hasData = !!meta.ids.length;
+    try{ hasData = hasData || !!localStorage.getItem(OLD); }catch(e){}
+    if(hasData) load().catch(() => {});
   };
   TS.initUserBg();
 
@@ -871,26 +959,75 @@
         applyMotion();
       });
 
-            /* ---- свой фон: клик — выбрать фото, повторный клик — убрать ---- */
+            /* ---- свой фон: панель с галереей и ползунками ---- */
+      const U = TS.userBg;
       const fileIn = document.createElement('input');
-      fileIn.type = 'file'; fileIn.accept = 'image/*'; fileIn.hidden = true;
+      fileIn.type = 'file'; fileIn.accept = 'image/*'; fileIn.multiple = true;
       fileIn.style.display = 'none';
       box.appendChild(fileIn);
-      function paintBg(){
-        const on = TS.userBg.has();
-        pbtn.setAttribute('aria-pressed', String(on));
-        const t = on ? 'Убрать свой фон' : 'Свой фон';
-        pbtn.setAttribute('aria-label', t);
-        pbtn.querySelector('.lbl').textContent = t;
+
+      const SL = [['dim', 'Затемнение / засветление', -90, 90], ['card', 'Прозрачность карточек', 0, 90], ['btn', 'Прозрачность кнопок и полей', 0, 90]];      const panel = document.createElement('div');
+      panel.className = 'bgp';
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-label', 'Свой фон');
+      panel.innerHTML = `<div class="bgp-h"><b>Свой фон</b><button type="button" class="bgp-x" aria-label="Закрыть">✕</button></div>
+        <div class="bgp-grid"></div>
+        <div class="bgp-sl">${SL.map(([k, t, lo, hi]) => `<label class="bgp-r"><span>${t}<output></output></span><input type="range" class="scrub" min="${lo}" max="${hi}" step="1" data-k="${k}"></label>`).join('')}</div>        <div class="bgp-f"><button type="button" class="bgp-reset">Сбросить ползунки</button><span>Фото хранятся только в этом браузере и никуда не отправляются.</span></div>`;
+      document.body.appendChild(panel);
+      const grid = panel.querySelector('.bgp-grid');
+      const isOpen = () => panel.classList.contains('open');
+      const setPanel = v => { panel.classList.toggle('open', v); pbtn.setAttribute('aria-expanded', String(v)); };
+
+      const fmt = (k, v) => k === 'dim' && v > 0 ? '+' + v + '%' : v + '%';
+      function syncSl(){
+        panel.querySelectorAll('input[type=range]').forEach(r => {
+          r.value = U.meta[r.dataset.k];
+          r.closest('.bgp-r').querySelector('output').textContent = fmt(r.dataset.k, +r.value);
+        });
       }
-      pbtn.addEventListener('click', () => { if(TS.userBg.has()) TS.userBg.clear(); else fileIn.click(); });
-      fileIn.addEventListener('change', async () => {
-        const f = fileIn.files[0];
-        fileIn.value = '';
-        if(f) await TS.userBg.set(f);
+      function paintBg(){
+        const on = U.has();
+        pbtn.setAttribute('aria-pressed', String(on));
+        pbtn.setAttribute('aria-label', 'Свой фон');
+        pbtn.querySelector('.lbl').textContent = 'Свой фон';
+        panel.classList.toggle('has', on);
+        let h = `<button type="button" class="bgp-t none${on ? '' : ' on'}" aria-label="Без фона" title="Без фона"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.3 17.7L17.7 6.3"/></svg></button>`;
+        U.meta.ids.forEach(id => {
+          const it = U.items.get(id);
+          if(!it) return;
+          h += `<div class="bgp-t${id === U.meta.active ? ' on' : ''}" data-id="${id}"><button type="button" class="bgp-pick" aria-label="Выбрать фон"><img src="${it.thumbUrl}" alt=""></button><button type="button" class="bgp-del" data-del="${id}" aria-label="Удалить фото">✕</button></div>`;
+        });
+        if(U.meta.ids.length < U.max) h += `<button type="button" class="bgp-t add" aria-label="Добавить фото" title="Добавить фото">+</button>`;
+        grid.innerHTML = h;
+      }
+
+      pbtn.addEventListener('click', () => setPanel(!isOpen()));
+      panel.querySelector('.bgp-x').onclick = () => setPanel(false);
+      document.addEventListener('pointerdown', e => { if(isOpen() && !panel.contains(e.target) && !pbtn.contains(e.target)) setPanel(false); });
+      document.addEventListener('keydown', e => { if(e.key === 'Escape') setPanel(false); });
+      grid.addEventListener('click', e => {
+        const del = e.target.closest('[data-del]');
+        if(del){ U.remove(del.dataset.del); return; }
+        if(e.target.closest('.add')){ fileIn.click(); return; }
+        if(e.target.closest('.none')){ U.select(null); return; }
+        const t = e.target.closest('.bgp-t[data-id]');
+        if(t) U.select(t.dataset.id);
       });
-      document.addEventListener('tsbg', paintBg);
-      paintBg();
+      panel.querySelectorAll('input[type=range]').forEach(r => r.addEventListener('input', () => {
+        U.set(r.dataset.k, +r.value);
+        r.closest('.bgp-r').querySelector('output').textContent = fmt(r.dataset.k, +r.value);
+      }));
+      panel.querySelector('.bgp-reset').onclick = () => { Object.keys(U.defaults).forEach(k => U.set(k, U.defaults[k])); syncSl(); };
+      fileIn.addEventListener('change', async () => {
+        const fs = [...fileIn.files];
+        fileIn.value = '';
+        if(!fs.length) return;
+        const free = U.max - U.meta.ids.length;
+        if(fs.length > free) alert(`Можно хранить не больше ${U.max} фото, свободно мест: ${free}.`);
+        await U.add(fs.slice(0, Math.max(0, free)));
+      });
+      document.addEventListener('tsbg', () => { paintBg(); syncSl(); });
+      paintBg(); syncSl();
 
       /* ---- выбор темы ---- */
       drops.forEach(d => d.addEventListener('click', () => {
