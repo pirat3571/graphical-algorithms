@@ -875,9 +875,11 @@
       }
 
       /* ---- открытие/закрытие ---- */
-      let closeT = 0, liveUntil = 0;
+      let closeT = 0, liveUntil = 0, openedAt = -1e9;
+      const GRACE = 500;   /* столько мс после открытия клик по кнопке меню не закрывает */
       const open = v => {
         clearTimeout(closeT);
+        if(v && !box.classList.contains('open')) openedAt = performance.now();
         box.classList.toggle('open', v);
         main.setAttribute('aria-expanded', String(v));
         if(!v) liveUntil = performance.now() + 1500;
@@ -892,7 +894,7 @@
       };
       main.addEventListener('click', () => {
         const now = performance.now();
-        if(now - lastClick > 400) streakStart = now;   /* пауза дольше 0,6 с обрывает серию */
+        if(now - lastClick > 400) streakStart = now;   /* пауза дольше 0,4 с обрывает серию */
         lastClick = now;
         if(now - streakStart >= 3000){
           eggUntil = now + 1000;
@@ -903,6 +905,7 @@
           }, 110);
           return;
         }
+        if(box.classList.contains('open') && now - openedAt < GRACE) return;
         open(!box.classList.contains('open'));
       });
       box.addEventListener('focusin', () => open(true));
